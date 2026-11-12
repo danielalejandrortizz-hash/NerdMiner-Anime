@@ -58,3 +58,15 @@ bash tools/compile_room.sh
 Se han compilado ambos firmwares y generado sus paquetes; no se ha probado hardware. La rama conserva las funciones y la
 licencia originales. El remoto `origin` local apunta al original; para futuras
 subidas usar el remoto `fork`, dirigido a NerdMiner-Anime.
+
+## Animación del firmware
+
+Los cuatro personajes se animan desde `roomTheme.inc`, usando imágenes en flash
+y filas de hasta 140 píxeles, sin nuevas asignaciones de heap. Las actualizaciones
+se limitan a 125 ms e incluyen movimiento local del personaje, efectos de energía
+y ondas en el agua. No escriben sobre las regiones reservadas a textos.
+
+El adaptador de escritorio comprueba los cuatro personajes en las cinco páginas,
+32 fases de animación, conservación de widgets, limitación de frecuencia, y ausencia
+de repintado en TEMAS y Pulse, con ASan/UBSan. No se ha probado una placa física;
+fluidez, consumo real de memoria y efecto sobre el hashrate siguen sin medir.

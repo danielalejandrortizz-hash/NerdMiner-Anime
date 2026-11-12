@@ -244,23 +244,142 @@ static void roomChrome(int screen)
   roomTiny(d, "LADOS: CAMBIAR PAGINA   ARRIBA DERECHA: LUZ", 12, 228);
 }
 
+// Animation is generated from the flash image, one row at a time. No video
+// decoder, extra image frames, full-screen framebuffer or heap allocation.
+static bool roomAnimationProtected(int x, int y)
+{
+  if (uiScreen == SCR_MINE)
+    return (x < 166 && y < 161) || (x >= 216 && y < 43) ||
+           (roomShareVisible && x >= 14 && x < 158 && y >= 198 && y < 217);
+  if (uiScreen == SCR_MARKET)
+    return x >= 12 && x < 206 && y < 227;
+  if (uiScreen == SCR_CLOCK)
+    return (x >= 42 && x < 278 && y >= 68 && y < 84) ||
+           (x >= 75 && x < 245 && y >= 88 && y < 152) ||
+           (x >= 35 && x < 285 && y >= 159 && y < 174);
+  if (uiScreen == 4)
+    return x >= 12 && (x < 206 || y >= 196);
+  if (uiScreen == 5)
+    return (y >= 87 && y < 147 && x >= 12 && x < 308) ||
+           (y >= 188 && y < 208 && x >= 42 && x < 278);
+  return true;
+}
+
 static void roomAnimate(unsigned long frame)
 {
-  if (uiScreen != SCR_MINE || !roomActive())
+  (void)frame;
+  if (!roomActive() || uiScreen < 0 || uiScreen > 5 || uiScreen == 3)
     return;
-  if (roomShareVisible && (unsigned long)(millis() - roomShareAt) >= 1800)
+  const unsigned long now = millis();
+  if (roomShareVisible && (unsigned long)(now - roomShareAt) >= 1800)
   {
     roomRestore(14, 198, 144, 19);
     roomShareVisible = false;
   }
-  // One subtle light in open sky; no full-screen repaint per animation frame.
-  if (frame % 5 == 0)
+  static unsigned long last = 0;
+  static int lastTheme = -1, lastScreen = -1;
+  if (lastTheme == roomTheme && lastScreen == uiScreen &&
+      (unsigned long)(now - last) < 125)
+    return;
+  last = now; lastTheme = roomTheme; lastScreen = uiScreen;
+  const unsigned phase = (now / 125) % 32;
+  static const int8_t wave[32] = {0,3,6,9,11,13,15,16,16,16,15,13,11,9,6,3,
+                                0,-3,-6,-9,-11,-13,-15,-16,-16,-16,-15,-13,-11,-9,-6,-3};
+  const bool goku = roomTheme < 2;
+  const uint16_t energy = roomTheme == 0 ? RGB565(140,220,255) :
+                          roomTheme == 1 ? RGB565(255,213,72) :
+                          roomTheme == 2 ? RGB565(255,244,120) : RGB565(255,159,45);
+  struct Mote { int x, y; } motes[12];
+  for (int i = 0; i < 12; ++i)
   {
-    uint16_t pixel = roomPixel(181, 46);
-    if (frame % 40 < 15)
-      pixel = mix565(pixel, ROOM_TEXT, 110);
-    uint16_t row[1] = {pixel};
-    roomPushRow(181, 46, 1, row);
+    const int age = (phase + i * 7) % 32;
+    if (goku)
+    {
+      // Crystal impact sparks for both Gokus; a rising aura for Super Saiyan.
+      if (roomTheme == 1 && i < 6)
+        motes[i] = {190 + (i % 2) * 42 + wave[(age + i) % 32] / 3, 210 - age * 2};
+      else
+        motes[i] = {249 - age * (1 + i % 3) / 4, 183 - age + age * age / 40 + i % 4};
+    }
+    else if (roomTheme == 2)
+      motes[i] = {257 + wave[(phase + i * 3) % 32], 177 + wave[(phase + i * 3 + 8) % 32] / 2};
+    else
+      motes[i] = {286 + wave[(age + i) % 32] / 4, 176 - age};
+  }
+  // Restore every animated pixel from flash before drawing the next pose/effect.
+  // Regions stay clear of UI widgets; protected spans are never sent to the LCD.
+  uint16_t row[140];
+  for (int y = 118; y < 219; ++y)
+  {
+    for (int dx = 0; dx < 140; ++dx)
+    {
+      const int x = 174 + dx;
+      int sy = y;
+      if (goku && x >= 177 && x < 250 && y >= 145 && y < 214)
+      {
+        const int edgeX = (x - 177 < 249 - x) ? x - 177 : 249 - x;
+        const int edgeY = (y - 145 < 213 - y) ? y - 145 : 213 - y;
+        if (edgeX > 5 && edgeY > 4)
+        {
+          const int swing = y >= 165 && y < 190 ? wave[(phase * 2) % 32] : 0;
+          sy += (wave[phase] + swing) / 14;
+        }
+      }
+      else if (!goku && x > 236 && x < 277 && y > 155 && y < 205)
+        sy += wave[phase] / 16; // gentle breathing, one pixel each way
+      uint16_t color = roomPixel(x, sy);
+      int glowX = roomTheme == 0 ? 223 : roomTheme == 1 ? 213 : roomTheme == 2 ? 260 : 286;
+      int glowY = roomTheme == 0 ? 179 : roomTheme == 1 ? 141 : roomTheme == 2 ? 181 : 174;
+      const int radius = roomTheme == 1 ? 21 : roomTheme == 3 ? 13 : 11;
+      const int distance = (x-glowX)*(x-glowX) + (y-glowY)*(y-glowY);
+      if (distance < radius*radius)
+      {
+        const int strength = 50 + (wave[(phase * (roomTheme == 3 ? 3 : 1)) % 32] + 16) * 2;
+        color = mix565(color, energy, strength * (radius*radius-distance) / (radius*radius));
+      }
+      for (int i = 0; i < 12; ++i)
+      {
+        const int mx = x - motes[i].x, my = y - motes[i].y;
+        if (mx*mx + my*my <= (i % 3 == 0 ? 2 : 1))
+          color = mix565(color, energy, 190);
+      }
+      // Pikachu's short lightning arcs change with the animation phase.
+      if (roomTheme == 2 && phase % 12 < 4 && x >= 278 && x <= 287 &&
+          y == 169 + (x-278)/2 + ((x + int(phase)) % 3))
+        color = energy;
+      row[dx] = color;
+    }
+    int start = 0;
+    while (start < 140)
+    {
+      while (start < 140 && roomAnimationProtected(174 + start, y)) ++start;
+      int end = start;
+      while (end < 140 && !roomAnimationProtected(174 + end, y)) ++end;
+      if (end > start) roomPushRow(174 + start, y, end-start, row+start);
+      start = end;
+    }
+  }
+  // Small lake strip: waves and warm reflections, without touching the metrics.
+  uint16_t water[140];
+  for (int y = 171; y < 193; ++y)
+  {
+    const int shift = wave[(phase + y * 3) % 32] / 7;
+    for (int x = 18; x < 158; ++x)
+    {
+      uint16_t c = roomPixel(x + shift, y);
+      if (x > 82 && x < 115 && (y + phase) % 7 == 0)
+        c = mix565(c, RGB565(255,218,145), 55);
+      water[x-18] = c;
+    }
+    int start = 18;
+    while (start < 158)
+    {
+      while (start < 158 && roomAnimationProtected(start, y)) ++start;
+      int end = start;
+      while (end < 158 && !roomAnimationProtected(end, y)) ++end;
+      if (end > start) roomPushRow(start, y, end-start, water+start-18);
+      start = end;
+    }
   }
 }
 

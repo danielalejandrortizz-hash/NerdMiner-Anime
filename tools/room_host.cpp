@@ -125,6 +125,37 @@ int main(int argc,char **argv){
     for (const char *value : {"0.0", "1000.0", "12345.6", "--", "9.0"}) roomPaintHashrate(value);
     uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
   }
+  // Exercise actual firmware animation: every character moves, widgets remain
+  // intact, updates are throttled, and menu/Pulse pages stay untouched.
+  for (roomTheme=0; roomTheme<4; ++roomTheme) {
+    for (uiScreen=0; uiScreen<=5; ++uiScreen) {
+      if (uiScreen==3) continue;
+      resetWidgets();roomChrome(uiScreen);
+      if (uiScreen==SCR_MINE) roomPaintMine(m);
+      if (uiScreen==SCR_MARKET) {
+        MarketV market;market.hdr.time="18:42";market.price="75,000 EUR";
+        market.block="900,000";market.fee="2 sat/vB";market.diff="120T";market.remaining="150000";
+        roomPaintMarket(market);
+      }
+      if (uiScreen==SCR_CLOCK) {ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);}
+      if (uiScreen==4) roomPaintStats(m.best,"120T","3.98e-14 %","24","0","990");
+      if (uiScreen==5) roomPaintHashrate("990.0");
+      auto staticPixels=tft.pixels;
+      fakeMs+=1000;roomAnimate(1);auto pose=tft.pixels;
+      const unsigned before=pushes;roomAnimate(2);assert(pushes==before);
+      bool moves=false;
+      for (int frame=0; frame<32; ++frame) {
+        fakeMs+=125;roomAnimate(frame);
+        if (tft.pixels!=pose) moves=true;
+        for(int y=0;y<240;++y)for(int x=0;x<320;++x)
+          if(roomAnimationProtected(x,y)) assert(tft.pixels[y*320+x]==staticPixels[y*320+x]);
+      }
+      assert(moves);
+      if(uiScreen==SCR_MINE) save(path+"/animated-"+std::to_string(roomTheme)+".ppm");
+    }
+    uiScreen=3;roomChrome(3);unsigned before=pushes;fakeMs+=1000;roomAnimate(1);assert(pushes==before);
+  }
+  roomTheme=4;uiScreen=SCR_MINE;unsigned beforePulse=pushes;roomAnimate(1);assert(pushes==beforePulse);
   roomTheme=0;uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);
   roomShareKnown=false;g_shareFoundEvents=7;roomPaintMine(m);assert(!roomShareVisible);
   WiFi.state=0;m.workers="--";m.poolLinked=false;roomPaintMine(m);save(path+"/offline.ppm");

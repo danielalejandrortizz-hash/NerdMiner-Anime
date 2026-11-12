@@ -91,7 +91,7 @@ indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
 - Preferencias de tema y página guardadas entre reinicios.
 - Instalador web con instalación completa, actualización y descarga de `.bin`.
 
-### Animaciones en la web
+### Los cuatro personajes animados
 
 La imagen principal del [instalador web](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
 se anima directamente al elegir cada personaje:
@@ -102,13 +102,22 @@ se anima directamente al elegir cada personaje:
 - **Pikachu:** brillo y descargas eléctricas.
 - **Charmander:** resplandor de la llama y brasas ascendentes.
 
-Incluye un botón para pausar o reanudar y respeta la preferencia de movimiento
-reducido del navegador. También puedes abrir la [demo con reloj y estadísticas de ejemplo](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/demo/),
-que permite comparar la escena animada con la imagen original.
+En la web puedes pausar o reanudar las animaciones, que respetan la preferencia
+de movimiento reducido del navegador.
 
-**Estas animaciones se ejecutan en el navegador.** En el firmware del ESP32,
-los personajes siguen siendo imágenes estáticas, con pequeños efectos ambientales
-y aviso de share. La adaptación de las animaciones web a la placa está pendiente.
+**El firmware también anima los cuatro personajes.** Los Goku tienen movimiento
+del cuerpo y los brazos, chispas de minería y energía azul o dorada; Pikachu,
+respiración y descargas; Charmander, respiración, brillo de fuego y brasas.
+El lago tiene ondas y reflejos. Los efectos se generan a partir de las imágenes
+guardadas en flash, con actualizaciones limitadas a 8 por segundo y sin un
+framebuffer completo. Se mantienen libres las zonas de texto en MINA, MERCADO,
+RELOJ, DETALLE DE MINERÍA y HASHRATE. El selector TEMAS conserva sus miniaturas.
+
+Para verlos en una placa que ya tiene KI Room, instala el firmware actualizado
+desde el [instalador](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/).
+La animación del ESP32 es una adaptación ligera, no una reproducción exacta del
+Canvas del navegador. Pantalla, fluidez y efecto sobre el hashrate requieren
+pruebas en una placa física.
 
 ### Controles en la pantalla
 

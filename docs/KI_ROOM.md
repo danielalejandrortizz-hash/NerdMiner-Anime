@@ -16,8 +16,14 @@ wallet/pool/backup, API, MQTT, Wi-Fi y los ajustes web conservan su código.
 - Tema y última pantalla guardados en el espacio NVS existente `cyd_ui`.
 - Se conservan rotación, inversión, brillo, timeout y atenuación nocturna del upstream.
 
-Los paisajes son estáticos. Hay una luz ambiental sutil y una notificación al
-confirmar una share de dificultad >=1. No hay animación articulada del pico.
+Los cuatro personajes tienen animaciones generadas sobre sus imágenes RGB565:
+movimiento del cuerpo y los brazos con chispas y ki para ambos Goku,
+respiración y descargas para Pikachu, y respiración, fuego y brasas para Charmander.
+El agua incluye ondas y reflejos. Se repintan regiones por filas a un máximo de
+8 actualizaciones por segundo, protegiendo los widgets y sin reservar un framebuffer
+completo. Las animaciones funcionan en las cinco páginas de paisaje y se detienen
+al apagar la pantalla; TEMAS conserva sus miniaturas. Se mantiene la notificación
+de share de dificultad >=1. Fluidez y rendimiento pendientes de pruebas en placa.
 
 ## Controles en la placa
 
