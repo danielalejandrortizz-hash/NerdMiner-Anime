@@ -65,7 +65,15 @@ indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
 
 - Cuatro paisajes: **Goku, Super Saiyan, Pikachu y Charmander**.
 - Pantalla de minería con hashrate, dificultad, workers, shares, conexión y uptime.
-- Reloj y fecha sobre el paisaje.
+- Pantalla Bitcoin ambientada en el paisaje y personaje elegidos: precio, último bloque,
+  comisión a 30 minutos, dificultad de red y bloques hasta el halving.
+- Reloj y fecha sobre el paisaje, con el texto pequeño
+  **«diseñado por Dani con ayuda de codex»** debajo del reloj.
+- Nueva página de detalle de minería: mejor dificultad local, objetivo de red,
+  comparación del mejor intento en porcentaje, shares de dificultad ≥ 1 aceptadas
+  y rechazadas, y hashrate.
+  El porcentaje compara tu mejor dificultad con la de la red: **no es progreso
+  acumulado hacia un bloque**; cada hash es un nuevo intento.
 - Selector táctil de personajes y opción **VOLVER A PULSE / ORIGINAL**.
 - Preferencias de tema y página guardadas entre reinicios.
 - Instalador web con instalación completa, actualización y descarga de `.bin`.
@@ -76,9 +84,9 @@ y aviso de share; no hay una animación articulada de Goku picando.
 ### Controles en la pantalla
 
 - Toca la mitad derecha para avanzar de página y la izquierda para retroceder.
-- Las páginas ciclan **MINA → MERCADO → RELOJ → TEMAS**.
+- Las páginas ciclan **MINA → MERCADO (Bitcoin) → RELOJ → TEMAS → DETALLE DE MINERÍA**.
 - En **TEMAS**, toca una tarjeta para elegir personaje y volver a MINA.
-- En MINA o RELOJ con paisaje, toca arriba a la izquierda para cambiar de personaje.
+- En MINA, MERCADO o RELOJ con paisaje, toca arriba a la izquierda para cambiar de personaje.
 - En TEMAS, pulsa **VOLVER A PULSE / ORIGINAL** para recuperar Pulse.
 - La esquina superior derecha apaga o enciende la pantalla. Con ella apagada,
   el primer toque solo la despierta.
@@ -138,6 +146,8 @@ El workflow de GitHub compila las dos variantes antes de publicar; si falla
 una compilación, no despliega firmware nuevo. No se flashea ninguna placa automáticamente.
 
 ## Créditos y documentación del proyecto base
+
+**Diseñado por Dani con ayuda de codex.**
 
 KI Room es un proyecto de fans, sin afiliación oficial con Dragon Ball o
 Pokémon. Los personajes pertenecen a sus respectivos titulares.
