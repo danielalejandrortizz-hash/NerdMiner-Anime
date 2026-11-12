@@ -332,13 +332,24 @@ long currentDstOffset(void)
   return utcNow(utc, false) ? dstOffsetAt(utc) : 0; // also called from the web server task
 }
 
+// KI Room display calibration: show one hour earlier, including date rollover.
+// Keep NTP/UTC and the saved timezone untouched.
+static long displayClockCorrection()
+{
+#ifdef CYD_THEME_ROOM
+  return -3600L;
+#else
+  return 0;
+#endif
+}
+
 // Local wall-clock time in seconds since 1970 (what the screens show).
 static int64_t localNow()
 {
   int64_t utc;
   if (!utcNow(utc)) // not set yet: elapsed time since boot (screens show "--")
     return (int64_t)(initialTime + (millis() - mTriggerUpdate) / 1000);
-  return utc + 3600L * s_appliedTimezone + dstOffsetAt(utc);
+  return utc + 3600L * s_appliedTimezone + dstOffsetAt(utc) + displayClockCorrection();
 }
 
 // Display helpers: lets a screen show "--" instead of a made-up value
@@ -359,7 +370,7 @@ bool getLocalClock(int &hour, int &minute, int &second, int &day, int &month, in
   int64_t utc;
   if (!utcNow(utc, false)) // web server task: never touches the RTC chip itself
     return false;
-  const int64_t now = utc + 3600L * s_appliedTimezone + dstOffsetAt(utc);
+  const int64_t now = utc + 3600L * s_appliedTimezone + dstOffsetAt(utc) + displayClockCorrection();
   const int64_t days = tu_daysOf(now);
   const int64_t secs = now - days * 86400;
   hour = secs / 3600;
