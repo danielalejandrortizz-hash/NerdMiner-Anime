@@ -1,0 +1,4 @@
+
+.scene-motion{position:absolute;inset:0;width:320px;height:240px;pointer-events:none}
+.lcd.original .scene-motion,.lcd.original .fireflies{visibility:hidden}
+.preview-badge{color:#d5b490}.preview-badge i{background:#e1bc7e}

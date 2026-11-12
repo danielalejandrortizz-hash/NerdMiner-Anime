@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#17191b">
+  <title>KI Miner · Un rincón de calma</title>
+  <link rel="stylesheet" href="room.css?v=6">
+  <link rel="stylesheet" href="animation.css?v=2">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="./"><span class="brand-emblem">ki.</span><span>MINER<span class="brand-sub">PEQUEÑOS MUNDOS</span></span></a><span class="preview-badge"><i></i>Demo animada</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">PARA ESE RINCÓN ESPECIAL DE TU HABITACIÓN</p><h1>Un poco de calma.<br>Un pequeño universo.</h1><p>Paisajes que apetece mirar, mientras tu minero sigue a lo suyo.</p></section>
+    <div class="workspace">
+      <section class="product" aria-label="Pantalla decorativa del minero">
+        <div class="device">
+          <div class="display-window" id="display-window">
+            <div class="lcd" id="lcd" data-theme="0" data-view="0">
+              <img class="scene-art" id="scene-art" src="../assets/goku-sunset.png" alt="Goku minando junto a un lago al atardecer, con montañas, flores y una pequeña casa en una isla">
+              <div class="scene-shade" aria-hidden="true"></div>
+              <div class="fireflies" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <section class="lcd-page landscape-page" data-page="0">
+                <div class="landscape-clock"><time class="mini-time" id="mini-time">18:42</time><div class="mini-date" id="mini-date">Una tarde tranquila</div></div>
+                <div class="landscape-status"><span class="mining-indicator"><i></i><span id="mining-status">Minando</span></span><span class="session-uptime" title="Tiempo encendido de ejemplo">1d 04h <span>encendido</span></span></div>
+                <div class="mining-dashboard" aria-label="Estadísticas de minería de ejemplo">
+                  <div class="mining-stat hashrate-stat"><span class="stat-label">HASHRATE</span><strong class="rate">990 <small>KH/s</small></strong></div>
+                  <div class="mining-stat"><span class="stat-label">BEST DIFF</span><strong id="best-difficulty">0.0478</strong></div>
+                  <div class="mining-stat"><span class="stat-label">WORKERS · POOL</span><strong><span id="workers">3</span><small id="workers-note">activos</small></strong></div>
+                  <div class="mining-stat" title="Shares aceptadas / rechazadas"><span class="stat-label">SHARES · OK / KO</span><strong><span id="shares">24</span><span class="share-slash">/</span><span class="rejected-shares">0</span></strong></div>
+                </div>
+              </section>
+              <section class="lcd-page market-page" data-page="1" hidden><div class="data-sheet"><div class="sheet-label">BITCOIN</div><div class="market-price">75.000 <span>€</span></div><div class="data-divider"></div><div class="data-row"><span>Mejor dificultad</span><strong>0.0478</strong></div><div class="data-row"><span>Altura del bloque</span><strong>900.000</strong></div><div class="data-row"><span>Shares aceptadas</span><strong id="market-shares">24</strong></div><div class="data-status"><i></i><span id="connection-text">Conectado · cifras de ejemplo</span></div></div></section>
+              <section class="lcd-page mining-detail-page" data-page="4" hidden><div class="data-sheet"><div class="sheet-label">TU MEJOR INTENTO · EJEMPLO</div><div class="attempt-ratio">3,98 × 10⁻¹⁴ %</div><div class="data-row"><span>Mejor dificultad</span><strong>0,0478</strong></div><div class="data-row"><span>Objetivo de red</span><strong>120 T</strong></div><div class="data-row"><span>Shares ≥1 · OK / KO</span><strong><span id="detail-shares">24</span> / 0</strong></div><div class="data-row"><span>Hashrate</span><strong id="detail-hash">990 KH/s</strong></div><p class="attempt-note">Comparación, no progreso acumulado.<br>Cada hash es un nuevo intento.</p></div></section>
+              <section class="lcd-page clock-page" data-page="2" hidden><div class="clock-content"><div class="clock-day" id="clock-day">jueves</div><time class="clock-digits" id="main-time"><span id="clock-hours">18</span><b>:</b><span id="clock-minutes">42</span></time><div class="clock-date" id="clock-date">12 de noviembre</div><small class="design-credit">diseñado por Dani con ayuda de codex</small></div><div class="clock-bottom"><i></i>El mundo sigue. Tú, a tu ritmo.</div></section>
+              <section class="lcd-page themes-page" data-page="3" hidden><div class="theme-sheet"><div class="sheet-label">TU PEQUEÑO UNIVERSO</div><div id="lcd-theme-picker" class="lcd-theme-picker"></div></div></section>
+              <div class="share-toast" id="share-toast" role="status"><span>✧</span><span>Una share más.<small>La aventura continúa.</small></span></div>
+              <div class="night-vignette" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="frame-bottom"><span>ki.</span><i></i></div>
+        </div>
+        <div class="product-caption"><span id="scene-name">Goku · Lago al atardecer</span><button id="fullscreen">Ver en grande ↗</button></div>
+        <nav class="view-picker" aria-label="Modo de pantalla"><button data-tab="0" aria-pressed="true">Paisaje</button><button data-tab="2" aria-pressed="false">Reloj</button><button data-tab="1" aria-pressed="false">Bitcoin</button><button data-tab="4" aria-pressed="false">Minería</button><button data-tab="3" aria-pressed="false">Temas</button></nav>
+      </section>
+      <aside class="controls">
+        <p class="eyebrow">HAZLO TUYO</p><h2>¿Qué mundo te apetece?</h2><div id="theme-picker" class="theme-picker" aria-label="Escenas"></div>
+        <div class="settings"><div class="setting-row"><label for="night">Luz suave<span>Menos brillo para la noche</span></label><button id="night" class="switch" role="switch" aria-checked="false" aria-label="Luz suave"><i></i></button></div><div class="setting-row"><label for="pause">Escena en calma<span>Pausa toda la animación</span></label><button id="pause" class="switch" role="switch" aria-checked="false" aria-label="Pausar animación"><i></i></button></div></div>
+        <div class="setting-row"><label for="compare">Ver original<span>Compara con la imagen estática</span></label><button id="compare" class="switch" role="switch" aria-checked="false" aria-label="Ver original"><i></i></button></div><details class="demo-options"><summary>Probar la demostración <span>+</span></summary><div><button id="share">✧ Celebrar una share</button><button id="network" aria-pressed="false">Simular desconexión</button></div></details>
+        <p class="demo-note">La hora es la de tu navegador.<br>Los datos de minería son de ejemplo.</p>
+      </aside>
+    </div>
+    <footer><span>Una ventana pequeña a otro mundo.</span><span>Demo web · Integración de animaciones en firmware pendiente</span></footer>
+  </main>
+  <script src="room.js?v=5"></script>
+  <script src="animation.js?v=4"></script>
+</body>
+</html>
