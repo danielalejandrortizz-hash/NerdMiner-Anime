@@ -798,6 +798,10 @@ static void paintClock(const ClockV &c)
 
 static void paintLoading(TFT_eSPI &d)
 {
+#ifdef CYD_THEME_ROOM
+  roomPaintWelcome(d, CURRENT_VERSION);
+  return;
+#endif
   clearScreen(d);
   // full-circle segmented ring, gradient around it
   const int cx = 160, cy = 92, r = 50, ri = 41, n = 24;
@@ -818,6 +822,11 @@ static void paintLoading(TFT_eSPI &d)
 
 static void paintSetup(TFT_eSPI &d)
 {
+#ifdef CYD_THEME_ROOM
+  String roomAp = readCustomAPName();
+  roomPaintSetup(d, roomAp.length() ? roomAp : String(DEFAULT_SSID), DEFAULT_WIFIPW);
+  return;
+#endif
   clearScreen(d);
   text(d, "SETUP", 16, 10, 24, C_TEXT, C_BG);
   text(d, "MODE", 16 + textW("SETUP", 24) + 7, 10, 24, cAcc, C_BG);

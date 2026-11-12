@@ -104,6 +104,8 @@ int main(int argc,char **argv){
   assert(argc==2);const std::string path=argv[1];
   MineV m;m.hdr.time="18:42";m.hash="990.0";m.best="0.0478";m.accepted="24";m.rejected="0";m.workers="3";m.date="THU  12 NOV 2026";m.strip.v[3]="1d 04h";
   for(roomTheme=0;roomTheme<4;roomTheme++){
+    uiScreen=-1;roomPaintWelcome(tft,"KI ROOM");save(path+"/loading-"+std::to_string(roomTheme)+".ppm");
+    roomPaintSetup(tft,"NerdMinerAP","MineYourCoins");save(path+"/setup-"+std::to_string(roomTheme)+".ppm");
     uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);const auto background=tft.pixels;roomPaintMine(m);
     // The right-hand character area remains byte-for-byte untouched.
     for(int y=70;y<240;y++)for(int x=170;x<320;x++)assert(tft.pixels[y*320+x]==background[y*320+x]);

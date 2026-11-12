@@ -253,3 +253,35 @@ static void roomAnimate(unsigned long frame)
     roomPushRow(181, 46, 1, row);
   }
 }
+
+// Setup uses the selected illustration even when the live page is Pulse.
+static void roomPaintWelcome(TFT_eSPI &d, const String &version)
+{
+  roomRestore(0, 0, SCR_W, SCR_H);
+  roomText(d, "NERDMINER ANIME", 12, 16, ROOM_TEXT, 2);
+  roomText(d, "KI ROOM", 14, 40, ROOM_DIM);
+  roomText(d, "CARGANDO TU UNIVERSO", 14, 177, ROOM_TEXT);
+  roomText(d, version, 14, 195, ROOM_DIM);
+  roomText(d, ROOM_NAMES[roomTheme < 4 ? roomTheme : 0], 14, 218, ROOM_TEXT);
+}
+
+static void roomPaintSetup(TFT_eSPI &d, const String &ap, const String &password)
+{
+  roomRestore(0, 0, SCR_W, SCR_H);
+  roomText(d, "NERDMINER ANIME", 12, 10, ROOM_TEXT, 2);
+  roomText(d, "CONFIGURA TU WIFI", 14, 34, ROOM_DIM);
+  // Narrow opaque cards leave the character visible and keep credentials legible.
+  const String values[] = {ap, password, "192.168.4.1"};
+  const char *labels[] = {"1. CONECTATE A ESTA RED", "2. CLAVE WIFI", "3. ABRE EN EL NAVEGADOR"};
+  for (int i = 0; i < 3; ++i)
+  {
+    const int y = 61 + i * 47;
+    if (!wBegin(200, 25, C_BG))
+      continue;
+    roomText(wgt, labels[i], 6, 4, ROOM_DIM);
+    roomText(wgt, values[i], 6, 15, ROOM_TEXT);
+    wEnd(10, y);
+  }
+  roomText(d, "Guarda tu red, wallet BTC y pool.", 14, 211, ROOM_TEXT);
+  roomText(d, "El minero se reiniciara al guardar.", 14, 225, ROOM_DIM);
+}
