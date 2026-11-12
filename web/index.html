@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101829">
+  <meta name="description" content="Instala NerdMiner Anime en tu CYD: Goku, Super Saiyan, Pikachu y Charmander en tu rincón de minería.">
+  <title>NerdMiner Anime · KI Room</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="nav wrap">
+    <a class="brand" href="#"><span class="emblem" aria-hidden="true">悟</span><span>NERDMINER <strong>ANIME</strong></span></a>
+    <nav aria-label="Principal"><a href="#universos">Universos</a><a href="#instalar">Instalar</a><a href="https://github.com/danielalejandrortizz-hash/NerdMiner-Anime">GitHub ↗</a></nav>
+  </header>
+  <main>
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="spark"></span> KI ROOM / ESP32 EDITION</p>
+        <h1 id="hero-title">Tu pequeño minero.<br><em>Un universo de ki.</em></h1>
+        <p class="intro">Goku se une a tu próxima aventura. Dale a tu NerdMiner un nuevo paisaje, conserva tus estadísticas y cambia de universo con un toque.</p>
+        <a class="primary" href="#instalar">Preparar mi placa <span aria-hidden="true">↗</span></a>
+        <p class="hero-note">Para CYD de 2,8″ · Instalación por USB</p>
+      </div>
+      <div class="scene-frame">
+        <img id="hero-art" src="assets/goku-sunset.png" alt="Goku minando cristales junto a un lago al atardecer" fetchpriority="high" width="1448" height="1086">
+        <div class="scene-label"><span class="spark"></span><span id="scene-name">SON GOKU</span><span>01 / 04</span></div>
+        <span class="scene-caption">Un rincón para desconectar. Y seguir minando.</span>
+      </div>
+    </section>
+    <section id="universos" class="universes wrap" aria-labelledby="universe-title">
+      <div class="section-top"><div><p class="eyebrow">ELIGE TU ENERGÍA</p><h2 id="universe-title">Cuatro mundos. Una placa.</h2></div><p>Todos los personajes vienen incluidos.<br>Cámbialos desde la pantalla táctil.</p></div>
+      <div class="characters" role="group" aria-label="Previsualizar personajes">
+        <button class="character selected" data-scene="goku" aria-pressed="true"><img src="assets/goku-sunset.png" alt="" loading="lazy"><span><small>01 / DRAGON BALL</small><strong>Goku</strong><b aria-hidden="true">↗</b></span></button>
+        <button class="character" data-scene="saiyan" aria-pressed="false"><img src="assets/saiyan-sunset.png" alt="" loading="lazy"><span><small>02 / DRAGON BALL</small><strong>Super Saiyan</strong><b aria-hidden="true">↗</b></span></button>
+        <button class="character" data-scene="pikachu" aria-pressed="false"><img src="assets/pikachu-sunset.png" alt="" loading="lazy"><span><small>03 / POKÉMON</small><strong>Pikachu</strong><b aria-hidden="true">↗</b></span></button>
+        <button class="character" data-scene="charmander" aria-pressed="false"><img src="assets/charmander-sunset.png" alt="" loading="lazy"><span><small>04 / POKÉMON</small><strong>Charmander</strong><b aria-hidden="true">↗</b></span></button>
+      </div>
+      <p class="caption">Previsualización de los paisajes. En la placa se añaden el reloj y los datos reales de minería. Los personajes son imágenes estáticas.</p>
+    </section>
+    <section id="instalar" class="installation wrap" aria-labelledby="install-title">
+      <div class="install-copy"><p class="eyebrow">TU AVENTURA EMPIEZA AQUÍ</p><h2 id="install-title">Conecta.<br>Instala.<br><em>Despierta tu ki.</em></h2><p>Usa Chrome o Edge en un ordenador y un cable USB que transmita datos.</p><ol><li><span>01</span>Selecciona el modelo que aparece en tu placa.</li><li><span>02</span>Conecta la placa por USB y pulsa instalar.</li><li><span>03</span>Al terminar, configura tu Wi-Fi, wallet y pool.</li></ol></div>
+      <div class="install-panel">
+        <p class="panel-heading">CENTRO DE ENTRENAMIENTO <span aria-hidden="true">✦</span></p>
+        <label for="board">Tu placa CYD de 2,8″</label>
+        <select id="board"><option value="">Selecciona tu modelo…</option><option value="ESP32-2432S028R-Room">ESP32-2432S028R · un USB</option><option value="ESP32_2432S028_2USB-Room">ESP32-2432S028 · dos USB</option></select>
+        <p class="field-help">Comprueba la referencia de la parte trasera. Esta versión no incluye las CYD de 3,5″ o 4″.</p>
+        <label for="install-mode">Tipo de instalación</label>
+        <select id="install-mode"><option value="factory">Instalación completa · primera vez</option><option value="update">Actualizar · ya tengo KI Room instalado</option></select>
+        <p id="mode-help" class="field-help">Incluye arranque, particiones y firmware. Puede borrar la configuración anterior.</p>
+        <div class="build-state" id="build-state" role="status" aria-live="polite">Selecciona tu placa para comprobar el firmware.</div>
+        <esp-web-install-button id="installer" hidden><button slot="activate" class="primary install-button">Instalar en mi placa <span aria-hidden="true">⚡</span></button><p slot="unsupported" class="browser-help">Abre esta página en Chrome o Edge en un ordenador con conexión USB.</p><p slot="not-allowed" class="browser-help">La instalación necesita HTTPS o localhost.</p></esp-web-install-button>
+        <a id="download" class="download" hidden>Descargar archivo .bin ↓</a>
+        <p id="hardware-note" class="fineprint">La compilación comprueba el firmware. Las pruebas físicas de pantalla, táctil y rendimiento siguen pendientes.</p>
+        <a class="text-link" href="https://github.com/danielalejandrortizz-hash/NerdMiner-Anime/actions">Ver compilaciones en GitHub ↗</a>
+      </div>
+    </section>
+    <section class="faq wrap" aria-labelledby="faq-title"><p class="eyebrow">ANTES DE EMPEZAR</p><h2 id="faq-title">Sin misterios de otro planeta.</h2><details><summary>¿Cambia la configuración de minería?</summary><p>KI Room conserva el código de minería, Stratum y los ajustes de wallet y pool del proyecto base. La interfaz añade los paisajes, el reloj y el selector de personajes. El rendimiento con esta interfaz está pendiente de pruebas en placa.</p></details><details><summary>¿Puedo volver a la interfaz Pulse?</summary><p>Sí. Abre la página TEMAS en la pantalla de la placa y toca «VOLVER A PULSE / ORIGINAL».</p></details><details><summary>¿Qué hago si no aparece el puerto USB?</summary><p>Prueba otro cable de datos, cierra otros programas que usen el puerto y revisa el controlador USB de tu placa. Si no conecta, consulta las instrucciones del fabricante para entrar en modo de arranque.</p></details><details><summary>¿Cómo configuro el Wi-Fi y la wallet?</summary><p>Tras la instalación, sigue las instrucciones de la pantalla y el portal de configuración del NerdMiner. Introduce tu Wi-Fi, la dirección pública de tu wallet y el pool. Nunca necesitas introducir la frase semilla de tu wallet.</p></details></section>
+  </main>
+  <footer class="wrap"><a class="brand" href="#">NERDMINER <strong>ANIME</strong></a><p>Un proyecto de fans basado en <a href="https://github.com/HenrysCat/NerdMiner-Modded">NerdMiner Modded</a> y <a href="https://github.com/BitMaker-hub/NerdMiner_v2">NerdMiner v2</a>.<br>Personajes de sus respectivos titulares. Sin afiliación oficial. <a href="https://github.com/danielalejandrortizz-hash/NerdMiner-Anime/blob/main/LICENSE">Licencia del proyecto</a>.</p></footer>
+</body>
+</html>

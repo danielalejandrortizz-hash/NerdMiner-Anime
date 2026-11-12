@@ -1,0 +1,71 @@
+name: KI Room firmware and web installer
+
+on:
+  push:
+    branches: [main, feature/ki-room-theme]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ki-room-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check renderer and installer
+        run: |
+          python tools/check_room.py
+          node --check web/app.js
+          node --test tools/web_installer.test.cjs
+          bash -n tools/compile_room.sh
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+      - name: Install build tools
+        run: python -m pip install platformio==6.1.18 esptool==4.8.1
+      - name: Compile both CYD variants
+        run: pio run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room
+      - name: Package web installer and binaries
+        run: python tools/package_web.py --output _site --version "ki-${GITHUB_SHA::7}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ki-room-installer
+          path: _site/
+          include-hidden-files: true
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          path: _site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment
