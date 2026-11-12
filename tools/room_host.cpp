@@ -94,6 +94,8 @@ static void resetWidgets(){for(auto &key:keys)key=String("\1");}
 struct HdrV{String time;int status=NM_hashing;};
 struct MineV{HdrV hdr;String hash,best,accepted,rejected,workers,date;bool poolLinked=true;struct{String v[4];}strip;};
 struct ClockV{String hh,mm,date;};
+struct MarketV{HdrV hdr;String price,block,fee,diff,remaining;};
+static String btcPairLabel(){return String("BTC / EUR");}
 #include "drivers/displays/roomTheme.inc"
 
 static void save(const std::string &path){
@@ -111,6 +113,12 @@ int main(int argc,char **argv){
     for(int y=70;y<240;y++)for(int x=170;x<320;x++)assert(tft.pixels[y*320+x]==background[y*320+x]);
     unsigned before=pushes;roomPaintMine(m);assert(pushes==before);
     save(path+"/mine-"+std::to_string(roomTheme)+".ppm");
+    uiScreen=SCR_MARKET;resetWidgets();roomChrome(uiScreen);
+    MarketV market;market.hdr.time="18:42";market.price="75,000 EUR";market.block="900,000";market.fee="2 sat/vB";market.diff="120.00T";market.remaining="150000";
+    roomPaintMarket(market);save(path+"/market-"+std::to_string(roomTheme)+".ppm");
+    before=pushes;roomPaintMarket(market);assert(pushes==before);
+    uiScreen=4;resetWidgets();roomChrome(uiScreen);
+    roomPaintStats(m.best, "120.00T", "3.98e-14 %", "24", "0", "990.0");save(path+"/stats-"+std::to_string(roomTheme)+".ppm");
     uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
   }
   roomTheme=0;uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);

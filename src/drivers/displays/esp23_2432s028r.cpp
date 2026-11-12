@@ -43,6 +43,7 @@ static void roomChrome(int screen);
 static void roomAnimate(unsigned long frame);
 static void roomSelectTheme(uint8_t theme);
 static void roomThemeScreen(unsigned long elapsed);
+static void roomStatsScreen(unsigned long elapsed);
 #endif
 
 #define WIDTH 130
@@ -639,8 +640,14 @@ static void chromeMarket(TFT_eSPI &d)
   chromeStripCells(d);
 }
 
+#ifdef CYD_THEME_ROOM
+static void roomPaintMarket(const MarketV &m);
+#endif
 static void paintMarket(const MarketV &m)
 {
+#ifdef CYD_THEME_ROOM
+  if (roomActive()) { roomPaintMarket(m); return; }
+#endif
   drawHeader(m.hdr);
 
   String k = m.price + "|" + accentIdx;
@@ -855,7 +862,7 @@ static void paintSetup(TFT_eSPI &d)
 static void paintChrome(TFT_eSPI &d, int scr)
 {
 #ifdef CYD_THEME_ROOM
-  if (scr == 3 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK)))
+  if (scr == 3 || scr == 4 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK || scr == SCR_MARKET)))
   {
     roomChrome(scr);
     return;
@@ -912,6 +919,7 @@ static bool haveMine = false, haveMarket = false, haveClock = false;
 static void repaintCached(int scr)
 {
 #ifdef CYD_THEME_ROOM
+  if (scr == 4) { roomStatsScreen(0); return; }
   if (scr == 3)
   {
     roomChrome(scr);
@@ -937,6 +945,32 @@ static void roomSelectTheme(uint8_t theme)
     ensureChrome(SCR_MINE);
     repaintCached(SCR_MINE);
   }
+}
+
+static void roomStatsScreen(unsigned long elapsed)
+{
+  coin_data data = getCoinData(elapsed);
+  uiLive = true;
+  ensureChrome(4);
+  // Network difficulty is supplied by the existing monitor in compact units.
+  String diff = data.netwrokDifficulty;
+  double target = atof(diff.c_str());
+  if (diff.endsWith("T")) target *= 1e12;
+  else if (diff.endsWith("G")) target *= 1e9;
+  else if (diff.endsWith("M")) target *= 1e6;
+  else if (diff.endsWith("K") || diff.endsWith("k")) target *= 1e3;
+  double best = getBestDiff();
+  String ratio = "--";
+  if (target > 0 && best > 0) {
+    char value[32];
+    snprintf(value, sizeof(value), "%.2e %%", best / target * 100.0);
+    ratio = value;
+  }
+  char bestText[24];
+  snprintf(bestText, sizeof(bestText), "%.4g", best);
+  roomPaintStats(String(bestText), diff.length() ? diff : String("--"), ratio,
+                 String(data.completedShares), String(shares32Rejected),
+                 WiFi.status() == WL_CONNECTED ? data.currentHashRate : String("--"));
 }
 
 static void roomThemeScreen(unsigned long elapsed)
@@ -1291,7 +1325,7 @@ void esp32_2432S028R_AnimateCurrentScreen(unsigned long frame)
   if (!uiLive || uiScreen < 0)
     return;
 #ifdef CYD_THEME_ROOM
-  if (uiScreen == 3 || (roomActive() && uiScreen != SCR_MARKET))
+  if (uiScreen == 3 || uiScreen == 4 || roomActive())
   {
     if (screenLit())
       roomAnimate(frame);
@@ -1382,7 +1416,7 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
     break;
   case TA_ACCENT:
 #ifdef CYD_THEME_ROOM
-    if (roomActive() && uiScreen != SCR_MARKET)
+    if (roomActive())
       roomSelectTheme((roomTheme + 1) % 4);
     else
 #endif
@@ -1540,7 +1574,7 @@ void cydDumpScreens(void)
 
 CyclicScreenFunction esp32_2432S028RCyclicScreens[] = {esp32_2432S028R_MinerScreen, esp32_2432S028R_MarketScreen, esp32_2432S028R_ClockScreen
 #ifdef CYD_THEME_ROOM
-    , roomThemeScreen
+    , roomThemeScreen, roomStatsScreen
 #endif
 };
 

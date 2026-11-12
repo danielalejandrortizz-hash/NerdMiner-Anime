@@ -187,6 +187,18 @@ static void roomClockPart(int id, int x, int width, const String &value)
 
 static void roomPaintClock(const ClockV &c)
 {
+  String credit = "Dani | codex";
+  if (need(W_HDR, credit) && roomBegin(35, 159, 250, 15)) {
+    const String message = "disenado por Dani con ayuda de codex";
+    roomText(wgt, message, 125, 4, ROOM_DIM, 1, TC_DATUM);
+    // Add the tilde to the n explicitly: the built-in font is ASCII/CP437.
+    int nx = 125 - wgt.textWidth(message) / 2 + 4 * 6;
+    wgt.drawPixel(nx + 1, 2, ROOM_DIM);
+    wgt.drawPixel(nx + 2, 1, ROOM_DIM);
+    wgt.drawPixel(nx + 3, 2, ROOM_DIM);
+    wgt.drawPixel(nx + 4, 1, ROOM_DIM);
+    wEnd(35, 159); done(W_HDR, credit);
+  }
   // Symmetric geometry: 72 + 26 + 72 = 170px, centered on x=160, y=120.
   roomClockPart(W_HH, 75, 72, c.hh);
   roomClockPart(W_COLON, 147, 26, ":");
@@ -284,4 +296,40 @@ static void roomPaintSetup(TFT_eSPI &d, const String &ap, const String &password
   }
   roomText(d, "Guarda tu red, wallet BTC y pool.", 14, 211, ROOM_TEXT);
   roomText(d, "El minero se reiniciara al guardar.", 14, 225, ROOM_DIM);
+}
+
+
+static void roomDataLine(int id, int y, const char *label, const String &value)
+{
+  String key = String(label) + value;
+  if (!need(id, key) || !roomBegin(12, y, 194, 25)) return;
+  roomTiny(wgt, label, 0, 0);
+  roomText(wgt, value, 0, 9, ROOM_TEXT, 2);
+  wEnd(12, y); done(id, key);
+}
+
+static void roomPaintMarket(const MarketV &m)
+{
+  roomDataLine(W_HDR, 12, "BITCOIN", m.hdr.time);
+  roomDataLine(W_HERO, 50, btcPairLabel().c_str(), m.price);
+  roomDataLine(W_T0, 91, "ULTIMO BLOQUE", m.block);
+  roomDataLine(W_T1, 128, "COMISION 30 MIN", m.fee);
+  roomDataLine(W_T2, 165, "DIFICULTAD DE RED", m.diff);
+  roomDataLine(W_T3, 202, "BLOQUES HASTA HALVING", m.remaining);
+}
+
+static void roomPaintStats(const String &best, const String &target, const String &ratio,
+                           const String &ok, const String &ko, const String &hash)
+{
+  roomDataLine(W_HDR, 8, "TU MEJOR INTENTO / RED", ratio);
+  roomDataLine(W_T0, 45, "MEJOR DIFICULTAD", best);
+  roomDataLine(W_T1, 82, "OBJETIVO DE RED", target);
+  roomDataLine(W_T2, 119, "SHARES >=1 ACEPTADAS / RECHAZADAS", roomCount(ok) + "/" + roomCount(ko));
+  roomDataLine(W_T3, 156, "HASHRATE KH/s", hash);
+  if (need(W_DATE, "note")) {
+    roomRestore(12, 196, 296, 35);
+    roomTiny(out(), "COMPARACION, NO PROGRESO ACUMULADO", 12, 201);
+    roomTiny(out(), "CADA HASH ES UN NUEVO INTENTO", 12, 216);
+    done(W_DATE, "note");
+  }
 }
