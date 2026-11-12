@@ -32,6 +32,18 @@
 #include "drivers/storage/storage.h"
 #include "currency.h"
 #include "rgbLed.h"
+#ifdef CYD_THEME_ROOM
+#include "mining.h"
+#include "media/room/RoomAssets.h"
+// Four illustrated scenes plus the existing Pulse renderer.
+static uint8_t roomTheme = 0;
+static uint8_t savedRoomTheme = 0;
+static bool roomActive() { return roomTheme < 4; }
+static void roomChrome(int screen);
+static void roomAnimate(unsigned long frame);
+static void roomSelectTheme(uint8_t theme);
+static void roomThemeScreen(unsigned long elapsed);
+#endif
 
 #define WIDTH 130
 #define HEIGHT 170
@@ -539,7 +551,15 @@ struct MineV
   float kh;
   bool flash;
   StripV strip;
+#ifdef CYD_THEME_ROOM
+  String accepted, rejected, workers, date;
+  bool poolLinked = false;
+#endif
 };
+
+#ifdef CYD_THEME_ROOM
+static void roomPaintMine(const MineV &m);
+#endif
 
 static const int TILE_Y[4] = {32, 72, 112, 152};
 
@@ -552,6 +572,13 @@ static void chromeMine(TFT_eSPI &d)
 
 static void paintMine(const MineV &m)
 {
+#ifdef CYD_THEME_ROOM
+  if (roomActive())
+  {
+    roomPaintMine(m);
+    return;
+  }
+#endif
   drawHeader(m.hdr);
 
   // hero readout inside the ring
@@ -671,6 +698,10 @@ struct ClockV
   String date, price, block, hash;
 };
 
+#ifdef CYD_THEME_ROOM
+#include "roomTheme.inc"
+#endif
+
 static void chromeClock(TFT_eSPI &d)
 {
   chromeStrip(d);
@@ -712,6 +743,13 @@ static void drawChart()
 
 static void paintClock(const ClockV &c)
 {
+#ifdef CYD_THEME_ROOM
+  if (roomActive())
+  {
+    roomPaintClock(c);
+    return;
+  }
+#endif
   drawHeader(c.hdr);
 
   // Glyph boxes start well above the digits (ascender space), so draw the
@@ -807,6 +845,13 @@ static void paintSetup(TFT_eSPI &d)
 
 static void paintChrome(TFT_eSPI &d, int scr)
 {
+#ifdef CYD_THEME_ROOM
+  if (scr == 3 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK)))
+  {
+    roomChrome(scr);
+    return;
+  }
+#endif
   clearScreen(d);
   d.drawFastHLine(0, HDR_H, SCR_W, C_EDGE);
   switch (scr)
@@ -857,6 +902,13 @@ static bool haveMine = false, haveMarket = false, haveClock = false;
 
 static void repaintCached(int scr)
 {
+#ifdef CYD_THEME_ROOM
+  if (scr == 3)
+  {
+    roomChrome(scr);
+    return;
+  }
+#endif
   if (scr == SCR_MINE && haveMine)
     paintMine(lastMine);
   else if (scr == SCR_MARKET && haveMarket)
@@ -864,6 +916,27 @@ static void repaintCached(int scr)
   else if (scr == SCR_CLOCK && haveClock)
     paintClock(lastClock);
 }
+
+#ifdef CYD_THEME_ROOM
+static void roomSelectTheme(uint8_t theme)
+{
+  roomTheme = theme <= 4 ? theme : 0;
+  currentDisplayDriver->current_cyclic_screen = SCR_MINE;
+  uiScreen = -1;
+  if (uiLive)
+  {
+    ensureChrome(SCR_MINE);
+    repaintCached(SCR_MINE);
+  }
+}
+
+static void roomThemeScreen(unsigned long elapsed)
+{
+  (void)elapsed;
+  uiLive = true;
+  ensureChrome(3);
+}
+#endif
 
 // ------------------------------------------------------- saved UI choices --
 // Accent colour and last-viewed page live in their own NVS namespace (the
@@ -882,6 +955,12 @@ static void loadUiPrefs()
     return; // namespace not created yet: defaults
   accentIdx = p.getUChar("accent", 0) % ACCENT_COUNT;
   int page = p.getUChar("page", 0);
+#ifdef CYD_THEME_ROOM
+  roomTheme = p.getUChar("room", 0);
+  if (roomTheme > 4)
+    roomTheme = 0;
+  savedRoomTheme = roomTheme;
+#endif
   p.end();
   cAcc = ACCENTS[accentIdx].main;
   cAlt = ACCENTS[accentIdx].alt;
@@ -892,13 +971,21 @@ static void loadUiPrefs()
 static void saveUiPrefs()
 {
   int page = currentDisplayDriver->current_cyclic_screen;
-  if (page == savedPage && accentIdx == savedAccent)
+  if (page == savedPage && accentIdx == savedAccent
+#ifdef CYD_THEME_ROOM
+      && roomTheme == savedRoomTheme
+#endif
+  )
     return;
   Preferences p;
   if (p.begin(UI_PREFS_NS, false))
   {
     p.putUChar("accent", accentIdx);
     p.putUChar("page", page);
+#ifdef CYD_THEME_ROOM
+    p.putUChar("room", roomTheme);
+    savedRoomTheme = roomTheme;
+#endif
     p.end();
   }
   savedAccent = accentIdx;
@@ -988,6 +1075,23 @@ void esp32_2432S028R_MinerScreen(unsigned long mElapsed)
   m.strip.v[2] = pData.bestDifficulty;
   m.strip.l[3] = "UPTIME";
   m.strip.v[3] = fmtUptime(data.timeMining);
+#ifdef CYD_THEME_ROOM
+  const MinerStatus status = getMinerStatus();
+  m.accepted = String(status.accepted);
+  m.rejected = String(status.rejected);
+  m.poolLinked = WiFi.status() == WL_CONNECTED && status.subscribed && status.authorized == 1;
+  // A zero from a successful API is real; defaults/errors are unknown.
+  const bool poolKnown = mPoolUpdate != 0 && pData.workersHash != "Error" &&
+                         pData.workersHash != "E" && pData.bestDifficulty != "P";
+  m.workers = poolKnown ? String(pData.workersCount) : String("--");
+  int hour, minute, second, day, month, year;
+  if (getLocalClock(hour, minute, second, day, month, year))
+  {
+    char date[16];
+    snprintf(date, sizeof(date), "%02d/%02d/%04d", day, month, year);
+    m.date = fmtDate(date);
+  }
+#endif
   lastMine = m;
   haveMine = true;
   paintMine(m);
@@ -1177,6 +1281,14 @@ void esp32_2432S028R_AnimateCurrentScreen(unsigned long frame)
 {
   if (!uiLive || uiScreen < 0)
     return;
+#ifdef CYD_THEME_ROOM
+  if (uiScreen == 3 || (roomActive() && uiScreen != SCR_MARKET))
+  {
+    if (screenLit())
+      roomAnimate(frame);
+    return;
+  }
+#endif
   drawPulse(frame);
   if (uiScreen == SCR_MINE && fabsf(gaugeTarget - gaugeShown) > 0.002f)
   {
@@ -1195,6 +1307,9 @@ enum TouchAction
   TA_PREV,
   TA_BACKLIGHT,
   TA_ACCENT
+#ifdef CYD_THEME_ROOM
+  , TA_ROOM_GOKU, TA_ROOM_SAIYAN, TA_ROOM_PIKACHU, TA_ROOM_CHARMANDER, TA_ROOM_PULSE
+#endif
 };
 static volatile int pendingTouch = TA_NONE;
 
@@ -1215,6 +1330,20 @@ static void touchTask(void *)
           pendingTouch = TA_BACKLIGHT; // dark: any touch turns the backlight back on
         else if (t_y < HDR_H + 4 && t_x > 235)
           pendingTouch = TA_BACKLIGHT; // top-right: backlight on/off
+#ifdef CYD_THEME_ROOM
+        else if (currentDisplayDriver->current_cyclic_screen == 3 &&
+                 t_x >= 12 && t_x < 308 && t_y >= 45 && t_y < 181)
+        {
+          // Must match room theme-card geometry; gaps do not select a card.
+          const int col = (t_x - 12) / 152;
+          const int row = (t_y - 45) / 72;
+          if ((t_x - 12) % 152 < 144 && (t_y - 45) % 72 < 64)
+            pendingTouch = TA_ROOM_GOKU + row * 2 + col;
+        }
+        else if (currentDisplayDriver->current_cyclic_screen == 3 &&
+                 t_x >= 12 && t_x < 308 && t_y >= 190 && t_y < 218)
+          pendingTouch = TA_ROOM_PULSE;
+#endif
         else if (t_y < HDR_H + 4 && t_x < 110)
           pendingTouch = TA_ACCENT; // wordmark: next accent colour
         else
@@ -1243,6 +1372,11 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
     esp32_2432S028R_AlternateScreenState();
     break;
   case TA_ACCENT:
+#ifdef CYD_THEME_ROOM
+    if (roomActive() && uiScreen != SCR_MARKET)
+      roomSelectTheme((roomTheme + 1) % 4);
+    else
+#endif
     setAccent(accentIdx + 1);
     break;
   case TA_NEXT:
@@ -1253,6 +1387,15 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
     if (drv->current_cyclic_screen < 0)
       drv->current_cyclic_screen = drv->num_cyclic_screens - 1;
     break;
+#ifdef CYD_THEME_ROOM
+  case TA_ROOM_GOKU:
+  case TA_ROOM_SAIYAN:
+  case TA_ROOM_PIKACHU:
+  case TA_ROOM_CHARMANDER:
+  case TA_ROOM_PULSE:
+    roomSelectTheme(action - TA_ROOM_GOKU);
+    break;
+#endif
   }
 
   // Screen changed by touch or the boot button: draw the new page right away
@@ -1386,7 +1529,11 @@ void cydDumpScreens(void)
 }
 #endif
 
-CyclicScreenFunction esp32_2432S028RCyclicScreens[] = {esp32_2432S028R_MinerScreen, esp32_2432S028R_MarketScreen, esp32_2432S028R_ClockScreen};
+CyclicScreenFunction esp32_2432S028RCyclicScreens[] = {esp32_2432S028R_MinerScreen, esp32_2432S028R_MarketScreen, esp32_2432S028R_ClockScreen
+#ifdef CYD_THEME_ROOM
+    , roomThemeScreen
+#endif
+};
 
 DisplayDriver esp32_2432S028RDriver = {
     esp32_2432S028R_Init,

@@ -226,7 +226,7 @@ void switchToNextScreen()
 // Draw the current cyclic screen
 void drawCurrentScreen(unsigned long mElapsed)
 {
-#if defined(M5STICK_C_PLUS2) && PLUS2_BACKLIGHT_PWM
+#if (defined(M5STICK_C_PLUS2) && PLUS2_BACKLIGHT_PWM) || defined(CYD_THEME_ROOM)
   // Screen switched off: nothing to see, so skip the redraw (~1/s of core-0
   // time the software miner gets back) and, on the info screens, the HTTPS
   // fetches that would pause the hardware miner. The next draw after the

@@ -1,5 +1,10 @@
 # NerdMiner Modded
 
+La rama `feature/ki-room-theme` añade el tema decorativo **KI Room** para CYD
+de 2,8″: Goku, Super Saiyan, Pikachu y Charmander, datos transparentes y reloj
+centrado. Incluye un selector para regresar a Pulse. Véanse
+[integración, controles, compilación y estado de pruebas](docs/KI_ROOM.md).
+
 **A modded fork of the NerdMiner v2**
 
 This is a modified version of the original **[NerdMiner_v2](https://github.com/BitMaker-hub/NerdMiner_v2)** by BitMaker-hub. All credit for the original project, the Stratum implementation and the multi-board support goes to the original authors and contributors. If you want the stock, widely tested firmware for any of the supported boards, use the original repository.
