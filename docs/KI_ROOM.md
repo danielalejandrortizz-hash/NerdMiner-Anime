@@ -123,8 +123,11 @@ escritorio, ejecuta ASan/UBSan (sin LeakSanitizer) y comprueba:
 Genera PNG de revisión en `artwork/ki-room/checks/`. Estos usan los gráficos y
 fuentes embebidos con un adaptador de escritorio; no son capturas de una placa.
 
-**Pendiente:** compilación con el SDK de ESP32, tamaño final de flash/RAM,
-pruebas de touch/rotación/inversión y comparación de hashrate en hardware.
+**Compilación verificada en GitHub Actions:** ambos entornos Room compilan.
+Usan 58.536 bytes de RAM estática y aproximadamente 2,47 MB de flash
+(78,4 % de la partición de aplicación). Esto no mide el heap durante el uso.
+**Pendiente:** pruebas de touch/rotación/inversión y comparación de hashrate
+en hardware. Consulta [el instalador web](WEB_INSTALLER.md) para instalar.
 La rama de entrega es `feature/ki-room-theme` en el fork
 https://github.com/danielalejandrortizz-hash/NerdMiner-Anime.
 No se ha flasheado ningún dispositivo.

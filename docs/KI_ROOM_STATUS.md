@@ -25,9 +25,13 @@ Revisión local: 12 de noviembre de 2026.
 - Revisión de herencia de los dos entornos Room: mantienen flags, pines y
   particiones base; 2USB conserva `TFT_INVERSION_ON`.
 - Motor de minería, Stratum y licencia sin cambios respecto a la base.
-- `bash tools/compile_room.sh`: intentado para ambos entornos; se detiene en
-  la descarga de pip por `Temporary failure in name resolution`. No llegó al
-  compilador ESP32. No hay binarios ni tamaño final de flash/RAM verificados.
+- Compilación real en GitHub Actions: PASS para `ESP32-2432S028R-Room` y
+  `ESP32_2432S028_2USB-Room`. RAM estática: 58.536 / 327.680 bytes (17,9 %).
+  Flash: 2.466.217 y 2.466.337 / 3.145.728 bytes (78,4 %).
+- Instalador empaquetado con esptool: imágenes completas a offset 0 y
+  actualizaciones a 0x10000, manifiestos ESP Web Tools y SHA-256.
+- Ejecución verificada: https://github.com/danielalejandrortizz-hash/NerdMiner-Anime/actions/runs/43226726953.
+- El shell local sigue sin resolver los hosts de dependencias.
 - Sin pruebas en placa: touch, rotación, inversión, memoria y hashrate pendientes.
 - Los PNG en `artwork/ki-room/checks/` son del adaptador de escritorio.
   La demo de `../NerdMiner-Anime/preview/index.html` usa cifras simuladas y
@@ -42,13 +46,15 @@ El fork deriva de HenrysCat/NerdMiner-Modded. La publicación se realiza mediant
 el conector GitHub, que usa la identidad autenticada para el commit; no se
 configura una identidad inventada en Git local.
 
-El shell sigue sin resolver GitHub y no dispone de PlatformIO. Antes de
-flashear, compilar los dos entornos con:
+La rama se ha incorporado a `main`, con instalador temático en `web/` y
+workflow de compilación y despliegue. Véase `docs/WEB_INSTALLER.md`.
+Los binarios compilados se descargan del artefacto `ki-room-installer` de
+GitHub Actions. Para recompilar localmente con acceso a internet:
 
 ```bash
 bash tools/compile_room.sh
 ```
 
-No se han validado binarios ni hardware. La rama conserva las funciones y la
+Se han compilado ambos firmwares y generado sus paquetes; no se ha probado hardware. La rama conserva las funciones y la
 licencia originales. El remoto `origin` local apunta al original; para futuras
 subidas usar el remoto `fork`, dirigido a NerdMiner-Anime.
