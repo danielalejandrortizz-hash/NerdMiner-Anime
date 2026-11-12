@@ -4,6 +4,16 @@ Tu NerdMiner con **Goku, Super Saiyan, Pikachu y Charmander**, reloj,
 estadísticas de minería y un selector táctil para cambiar de personaje o
 volver a la interfaz Pulse.
 
+## Los cuatro paisajes de KI Room
+
+Las mismas ilustraciones que puedes previsualizar en el [instalador web](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/), incluidas en el firmware.
+
+| Goku | Super Saiyan |
+| :---: | :---: |
+| ![Goku minando junto a un lago al atardecer](artwork/ki-room/goku-sunset.png) | ![Super Saiyan en un paisaje al atardecer](artwork/ki-room/saiyan-sunset.png) |
+| **Pikachu** | **Charmander** |
+| ![Paisaje de Pikachu al atardecer](artwork/ki-room/pikachu-sunset.png) | ![Paisaje de Charmander al atardecer](artwork/ki-room/charmander-sunset.png) |
+
 ## Instalar en tu placa desde el navegador
 
 ### [⚡ ABRIR EL INSTALADOR DE NERDMINER ANIME](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
