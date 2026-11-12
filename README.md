@@ -1,12 +1,155 @@
-# NerdMiner Modded
+# NerdMiner Anime · KI Room
 
-El instalador web de **NerdMiner Anime / KI Room** y su compilación automática
-se describen en [Instalador web](docs/WEB_INSTALLER.md).
+Tu NerdMiner con **Goku, Super Saiyan, Pikachu y Charmander**, reloj,
+estadísticas de minería y un selector táctil para cambiar de personaje o
+volver a la interfaz Pulse.
 
-La rama `feature/ki-room-theme` añade el tema decorativo **KI Room** para CYD
-de 2,8″: Goku, Super Saiyan, Pikachu y Charmander, datos transparentes y reloj
-centrado. Incluye un selector para regresar a Pulse. Véanse
-[integración, controles, compilación y estado de pruebas](docs/KI_ROOM.md).
+## Instalar en tu placa desde el navegador
+
+### [⚡ ABRIR EL INSTALADOR DE NERDMINER ANIME](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
+
+La web está publicada en GitHub Pages, ambientada en Goku y con los cuatro
+paisajes disponibles para previsualizar. **No necesitas instalar PlatformIO
+ni compilar en tu ordenador para usar el instalador web.**
+
+1. Abre el instalador en **Chrome o Edge desde un ordenador**.
+2. Conecta la placa con un **cable USB de datos**.
+3. Selecciona el modelo exacto de tu placa en el desplegable.
+4. Si es la primera vez, elige **Instalación completa**.
+5. Pulsa **Instalar en mi placa**, selecciona el puerto USB y sigue el diálogo.
+6. Al terminar, configura tu Wi-Fi, dirección pública de wallet BTC y pool.
+
+**La instalación completa puede borrar la configuración anterior.** Incluye
+el arranque, las particiones y el firmware. La opción **Actualizar** es para
+placas que ya tienen KI Room con las mismas particiones; desmarca el borrado
+en el diálogo si quieres conservar los ajustes.
+
+El personaje elegido en la web solo cambia la previsualización: **los cuatro
+vienen incluidos en ambos firmwares** y se eligen desde la pantalla de la placa.
+
+### Placas disponibles en este instalador
+
+| Tu placa | Opción en la web | Entorno de compilación |
+| --- | --- | --- |
+| CYD de 2,8″ ESP32-2432S028R, un USB | ESP32-2432S028R · un USB | `ESP32-2432S028R-Room` |
+| CYD de 2,8″ ESP32-2432S028, dos USB | ESP32-2432S028 · dos USB | `ESP32_2432S028_2USB-Room` |
+
+Comprueba la referencia en la parte trasera. **El tema KI Room y este
+instalador están preparados para estas CYD de 2,8″; no incluyen versiones
+Room para las CYD de 3,5″ o 4″ ni para las demás placas del proyecto base.**
+La variante de dos USB conserva la inversión de colores de su entorno base.
+
+### Configuración después de instalar
+
+1. Conéctate a la red Wi-Fi **`NerdMinerAP`**, con contraseña **`MineYourCoins`**.
+2. Abre el portal de configuración y establece tu red Wi-Fi, dirección pública
+   de wallet BTC y pool compatible con NerdMiner.
+3. Una vez conectado a tu red, abre `http://<IP-de-la-placa>/` para ver el
+   monitor y `http://<IP-de-la-placa>/settings` para cambiar los ajustes.
+4. El acceso inicial a los ajustes usa **`admin` / `MineYourCoins`**; puedes
+   cambiar la contraseña desde esa página.
+
+La dirección es la IP local de tu placa, no la del instalador. Sigue las
+indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
+**Nunca introduzcas la frase semilla ni la clave privada de tu wallet.**
+
+### Si no aparece el puerto USB
+
+- Comprueba que el cable transmite datos; algunos solo sirven para cargar.
+- Cierra otros programas que estén usando el puerto serie.
+- Prueba otro puerto y revisa el controlador USB correspondiente a tu placa.
+- Si sigue sin conectar, sigue las instrucciones de tu placa para entrar en
+  modo de arranque. Consulta también [la guía del instalador](docs/WEB_INSTALLER.md).
+
+## Qué incluye KI Room
+
+- Cuatro paisajes: **Goku, Super Saiyan, Pikachu y Charmander**.
+- Pantalla de minería con hashrate, dificultad, workers, shares, conexión y uptime.
+- Reloj y fecha sobre el paisaje.
+- Selector táctil de personajes y opción **VOLVER A PULSE / ORIGINAL**.
+- Preferencias de tema y página guardadas entre reinicios.
+- Instalador web con instalación completa, actualización y descarga de `.bin`.
+
+**Los personajes son imágenes estáticas**, con pequeños efectos ambientales
+y aviso de share; no hay una animación articulada de Goku picando.
+
+### Controles en la pantalla
+
+- Toca la mitad derecha para avanzar de página y la izquierda para retroceder.
+- Las páginas ciclan **MINA → MERCADO → RELOJ → TEMAS**.
+- En **TEMAS**, toca una tarjeta para elegir personaje y volver a MINA.
+- En MINA o RELOJ con paisaje, toca arriba a la izquierda para cambiar de personaje.
+- En TEMAS, pulsa **VOLVER A PULSE / ORIGINAL** para recuperar Pulse.
+- La esquina superior derecha apaga o enciende la pantalla. Con ella apagada,
+  el primer toque solo la despierta.
+
+## Comparación con el proyecto base y estado de pruebas
+
+Este fork parte de [HenrysCat/NerdMiner-Modded](https://github.com/HenrysCat/NerdMiner-Modded),
+commit `522764d`. Conserva el código de minería, Stratum, Wi-Fi, wallet/pool,
+API y MQTT. Los cambios añaden la interfaz KI Room, su integración en el driver
+CYD, los entornos Room y el instalador. Se mantienen la licencia y los créditos.
+
+**Comprobado:**
+
+- Ambos entornos CYD Room compilan con el SDK de ESP32 en GitHub Actions.
+- Ocupan aproximadamente **2,47 MB de flash**, un **78,4 %** de la partición de
+  aplicación; la RAM estática es **58.536 bytes**, un **17,9 %**. Esto no mide
+  el consumo de heap durante el uso.
+- Las pruebas de escritorio del renderizador pasan con ASan/UBSan: escenas,
+  reloj, menú, desconexión, caché y expiración del aviso de share.
+- Las pruebas del instalador comprueban archivos ausentes, rutas de GitHub
+  Pages y cambios de selección. Sin binarios disponibles, no permite instalar.
+- La compilación, el empaquetado y el despliegue de GitHub Pages han finalizado correctamente.
+
+**Pendiente de probar en una placa física:** pantalla, táctil, rotación,
+inversión, memoria en ejecución y rendimiento de minería. Las cifras de
+hashrate y las pruebas en hardware de la documentación heredada pertenecen
+al proyecto base; **no son mediciones de KI Room**.
+
+[Ver compilaciones y descargar artefactos](https://github.com/danielalejandrortizz-hash/NerdMiner-Anime/actions)
+· [Detalles de integración](docs/KI_ROOM.md)
+· [Estado técnico](docs/KI_ROOM_STATUS.md)
+· [Instalador y publicación](docs/WEB_INSTALLER.md)
+
+## Compilar por tu cuenta
+
+La versión publicada está en **`main`**. La rama de desarrollo original es
+`feature/ki-room-theme`.
+
+```bash
+git clone https://github.com/danielalejandrortizz-hash/NerdMiner-Anime.git
+cd NerdMiner-Anime
+python3 -m pip install platformio==6.1.18 esptool==4.8.1
+pio run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room
+```
+
+Los binarios de aplicación quedan en `.pio/build/<entorno>/firmware.bin`.
+Para generar el instalador completo con imágenes factory, actualizaciones,
+manifiestos y sumas SHA-256:
+
+```bash
+python3 tools/package_web.py --output _site --version ki-local
+python3 -m http.server 8765 --directory _site
+```
+
+Abre `http://localhost:8765`. `_site` debe ser una carpeta nueva al empaquetar.
+El workflow de GitHub compila las dos variantes antes de publicar; si falla
+una compilación, no despliega firmware nuevo. No se flashea ninguna placa automáticamente.
+
+## Créditos y documentación del proyecto base
+
+KI Room es un proyecto de fans, sin afiliación oficial con Dragon Ball o
+Pokémon. Los personajes pertenecen a sus respectivos titulares.
+Se conserva la [licencia original](LICENSE) y el reconocimiento a HenrysCat,
+BitMaker-hub y los demás autores.
+
+La documentación siguiente se conserva como referencia del proyecto base.
+Sus otras placas, temas, instaladores y mediciones no amplían la compatibilidad
+del instalador Anime descrito arriba. **Para instalar los personajes, utiliza
+el enlace de NerdMiner Anime del principio de este README.**
+
+---
 
 **A modded fork of the NerdMiner v2**
 
@@ -110,13 +253,15 @@ Every time an stratum job notification is received miner update its current work
 
 \*Affiliate links
 
-### Flash firmware
+### Flash firmware (referencia del proyecto base)
+
+> **Para KI Room con personajes:** usa [el instalador NerdMiner Anime](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/). Los instaladores siguientes pertenecen a otros proyectos y no instalan KI Room.
 
 > **Flashing NerdMiner Modded:** use the web flasher at **https://henryscat.github.io/NerdMiner-Modded/** (Chrome, Edge or Brave). It offers a *full install* (factory image: bootloader, partition table and firmware, for a first flash) and a *firmware-only update* (keeps your settings). Pick your board there first: the 2.8" CYD (ESP32-2432S028R, one USB port or two), the 4.0" CYD (320x480 ST7796), the LilyGO T-Display 1.14", the M5StickC Plus2 (Pulse theme), the ES3C35P (ESP32-S3, 3.5" 320x480) or the ESP32-WROOM-32 without a screen. Builds for the other boards, which compile but have not been tested on hardware, are on a separate page: **https://henryscat.github.io/NerdMiner-Modded/untested/**. You can also build and flash this repository with PlatformIO, e.g. `pio run -e ESP32-2432S028R -t upload` for the 2.8" board, `pio run -e ESP32-4in-ST7796 -t upload` for the 4.0" one or `pio run -e ESP32-WROOM-Headless -t upload` for the screenless board.
 >
 > The online flasher and the prebuilt binaries in the sections below come from the **original** project and will install the original firmware, not the modded one.
 
-#### microMiners Flashtool [Recommended]
+#### microMiners Flashtool (proyecto original)
 
 Easyiest way to flash firmware. Build your own miner using the folowing firwmare flash tool:
 
