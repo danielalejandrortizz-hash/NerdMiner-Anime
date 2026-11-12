@@ -1,8 +1,8 @@
 # NerdMiner Anime · KI Room
 
 Tu NerdMiner con **Goku, Super Saiyan, Pikachu y Charmander**, reloj,
-estadísticas de minería y un selector táctil para cambiar de personaje o
-volver a la interfaz Pulse.
+estadísticas de minería y un selector táctil para cambiar de personaje y
+una pantalla con los kH/s en grande.
 
 ## Los cuatro paisajes de KI Room
 
@@ -84,7 +84,8 @@ indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
   y rechazadas, y hashrate.
   El porcentaje compara tu mejor dificultad con la de la red: **no es progreso
   acumulado hacia un bloque**; cada hash es un nuevo intento.
-- Selector táctil de personajes y opción **VOLVER A PULSE / ORIGINAL**.
+- Selector táctil de los cuatro personajes.
+- Página **HASHRATE** con los kH/s en grande sobre el paisaje elegido.
 - Preferencias de tema y página guardadas entre reinicios.
 - Instalador web con instalación completa, actualización y descarga de `.bin`.
 
@@ -94,10 +95,9 @@ y aviso de share; no hay una animación articulada de Goku picando.
 ### Controles en la pantalla
 
 - Toca la mitad derecha para avanzar de página y la izquierda para retroceder.
-- Las páginas ciclan **MINA → MERCADO (Bitcoin) → RELOJ → TEMAS → DETALLE DE MINERÍA**.
+- Las páginas ciclan **MINA → MERCADO (Bitcoin) → RELOJ → TEMAS → DETALLE DE MINERÍA → HASHRATE**.
 - En **TEMAS**, toca una tarjeta para elegir personaje y volver a MINA.
 - En MINA, MERCADO o RELOJ con paisaje, toca arriba a la izquierda para cambiar de personaje.
-- En TEMAS, pulsa **VOLVER A PULSE / ORIGINAL** para recuperar Pulse.
 - La esquina superior derecha apaga o enciende la pantalla. Con ella apagada,
   el primer toque solo la despierta.
 

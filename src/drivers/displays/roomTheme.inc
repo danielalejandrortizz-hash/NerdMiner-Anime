@@ -13,7 +13,7 @@ static uint16_t roomPixel(int x, int y)
 {
   uint16_t c = pgm_read_word(ROOM_IMAGES[roomTheme < 4 ? roomTheme : 0] + y * SCR_W + x);
   // Dim only the clock scene, to keep the centered digits legible.
-  return uiScreen == SCR_CLOCK ? mix565(c, RGB565(15, 20, 37), 95) : c;
+  return (uiScreen == SCR_CLOCK || uiScreen == 5) ? mix565(c, RGB565(15, 20, 37), 95) : c;
 }
 
 static void roomPushRow(int x, int y, int width, uint16_t *pixels)
@@ -241,8 +241,6 @@ static void roomChrome(int screen)
     if (roomTheme == i)
       d.drawRect(x, y, 144, 64, ROOM_TEXT);
   }
-  d.drawRoundRect(12, 190, 296, 28, 4, C_EDGE);
-  roomText(d, "VOLVER A PULSE / ORIGINAL", 24, 200, ROOM_DIM);
   roomTiny(d, "LADOS: CAMBIAR PAGINA   ARRIBA DERECHA: LUZ", 12, 228);
 }
 
@@ -266,7 +264,7 @@ static void roomAnimate(unsigned long frame)
   }
 }
 
-// Setup uses the selected illustration even when the live page is Pulse.
+// Setup uses the selected illustration.
 static void roomPaintWelcome(TFT_eSPI &d, const String &version)
 {
   roomRestore(0, 0, SCR_W, SCR_H);
@@ -332,4 +330,28 @@ static void roomPaintStats(const String &best, const String &target, const Strin
     roomTiny(out(), "CADA HASH ES UN NUEVO INTENTO", 12, 216);
     done(W_DATE, "note");
   }
+}
+
+
+// Draw each large digit separately to keep the scratch sprite below 10 KB.
+static void roomPaintHashrate(const String &hash)
+{
+  if (need(W_HDR, "hashrate")) {
+    roomText(out(), "VELOCIDAD DE MINERIA", 160, 42, ROOM_DIM, 2, TC_DATUM);
+    roomText(out(), "kH/s", 160, 153, ROOM_TEXT, 2, TC_DATUM);
+    done(W_HDR, "hashrate");
+  }
+  if (!need(W_HERO, hash)) return;
+  // Each glyph is at most 30px wide; even 12345.6 fits in 7 cells.
+  const String value = hash.length() <= 7 ? hash : String("--");
+  roomRestore(12, 87, 296, 60);
+  const int start = (SCR_W - value.length() * 40) / 2;
+  for (unsigned i = 0; i < value.length(); ++i) {
+    if (!roomBegin(start + i * 40, 87, 40, 60)) return;
+    roomFreeText(wgt, value.substring(i, i + 1), 20, 30, &FreeSans24pt7b);
+    wEnd(start + i * 40, 87);
+  }
+  roomRestore(42, 188, 236, 20);
+  roomText(out(), hash == "--" ? "SIN RED" : "HASHRATE ACTUAL", 160, 191, ROOM_DIM, 1, TC_DATUM);
+  done(W_HERO, hash);
 }
