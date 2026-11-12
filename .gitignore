@@ -13,3 +13,5 @@ firmware/
 
 __pycache__/
 compile_commands.json
+_site/
+web/assets/

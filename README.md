@@ -1,5 +1,8 @@
 # NerdMiner Modded
 
+El instalador web de **NerdMiner Anime / KI Room** y su compilación automática
+se describen en [Instalador web](docs/WEB_INSTALLER.md).
+
 La rama `feature/ki-room-theme` añade el tema decorativo **KI Room** para CYD
 de 2,8″: Goku, Super Saiyan, Pikachu y Charmander, datos transparentes y reloj
 centrado. Incluye un selector para regresar a Pulse. Véanse
