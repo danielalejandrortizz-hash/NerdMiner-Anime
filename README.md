@@ -19,7 +19,9 @@ Las mismas ilustraciones que puedes previsualizar en el [instalador web](https:/
 ### [⚡ ABRIR EL INSTALADOR DE NERDMINER ANIME](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
 
 La web está publicada en GitHub Pages, ambientada en Goku y con los cuatro
-paisajes disponibles para previsualizar. **No necesitas instalar PlatformIO
+paisajes animados directamente en la imagen principal: selecciona un personaje
+para ver sus efectos y usa **Pausar animación** cuando quieras detenerlos.
+**No necesitas instalar PlatformIO
 ni compilar en tu ordenador para usar el instalador web.**
 
 1. Abre el instalador en **Chrome o Edge desde un ordenador**.
@@ -89,8 +91,24 @@ indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
 - Preferencias de tema y página guardadas entre reinicios.
 - Instalador web con instalación completa, actualización y descarga de `.bin`.
 
-**Los personajes son imágenes estáticas**, con pequeños efectos ambientales
-y aviso de share; no hay una animación articulada de Goku picando.
+### Animaciones en la web
+
+La imagen principal del [instalador web](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
+se anima directamente al elegir cada personaje:
+
+- Ondas y reflejos en el lago, con pétalos en movimiento.
+- **Goku:** movimiento suave del cuerpo y los brazos, chispas al minar y energía azul.
+- **Super Saiyan:** movimiento de minería, chispas y aura dorada con partículas ascendentes.
+- **Pikachu:** brillo y descargas eléctricas.
+- **Charmander:** resplandor de la llama y brasas ascendentes.
+
+Incluye un botón para pausar o reanudar y respeta la preferencia de movimiento
+reducido del navegador. También puedes abrir la [demo con reloj y estadísticas de ejemplo](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/demo/),
+que permite comparar la escena animada con la imagen original.
+
+**Estas animaciones se ejecutan en el navegador.** En el firmware del ESP32,
+los personajes siguen siendo imágenes estáticas, con pequeños efectos ambientales
+y aviso de share. La adaptación de las animaciones web a la placa está pendiente.
 
 ### Controles en la pantalla
 
