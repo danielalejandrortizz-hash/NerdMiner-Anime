@@ -5,17 +5,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../web/app.js'), 'utf8');
 
-function setup(fetch) {
+function setup(fetch, href = 'https://example.com/NerdMiner-Anime/') {
   const elements = {};
-  for (const id of ['board', 'install-mode', 'installer', 'build-state', 'download', 'mode-help']) {
+  for (const id of ['board', 'install-mode', 'installer', 'build-state', 'download', 'mode-help', 'animation-mode']) {
     elements['#' + id] = {
-      value: id === 'install-mode' ? 'factory' : '', hidden: true, attrs: {},
+      value: id === 'install-mode' ? 'factory' : id === 'animation-mode' ? 'animated' : '', hidden: true, attrs: {},
       setAttribute(key, value) { this.attrs[key] = value; },
       removeAttribute(key) { delete this.attrs[key]; }, addEventListener() {},
     };
   }
   const context = vm.createContext({ document: { querySelector: id => elements[id], querySelectorAll: () => [] },
-    fetch, URL, location: { href: 'https://example.com/NerdMiner-Anime/' } });
+    fetch, URL, location: { href } });
   vm.runInContext(source, context);
   return { elements, select: () => vm.runInContext('selectFirmware()', context) };
 }
@@ -62,4 +62,27 @@ test('late response from previous selection cannot install wrong board', async (
   await first;
   assert.equal(app.elements['#installer'].hidden, true);
   assert.match(app.elements['#build-state'].textContent, /Selecciona tu placa/);
+});
+
+test('static selection installs and downloads only static firmware for each board and mode', async () => {
+  for (const board of ['ESP32-2432S028R-Room', 'ESP32_2432S028_2USB-Room']) {
+    for (const mode of ['factory', 'update']) {
+      const urls = [];
+      const app = setup(async url => { urls.push(String(url)); return ok(); });
+      app.elements['#board'].value = board;
+      app.elements['#animation-mode'].value = 'static';
+      app.elements['#install-mode'].value = mode;
+      await app.select();
+      assert.equal(urls[0], `firmware/${board}-Static-${mode}.json`);
+      assert.equal(app.elements['#installer'].attrs.manifest, urls[0]);
+      assert.equal(app.elements['#download'].hidden, false);
+    }
+  }
+});
+
+test('direct static link preselects firmware without exposing downloads before a board is chosen', () => {
+  const app = setup(async () => ok(), 'https://example.com/NerdMiner-Anime/instalar.html?animation=static#instalar');
+  assert.equal(app.elements['#animation-mode'].value, 'static');
+  assert.equal(app.elements['#installer'].hidden, true);
+  assert.equal(app.elements['#download'].hidden, true);
 });
