@@ -4,3 +4,7 @@
 .preview-badge{color:#d5b490}.preview-badge i{background:#e1bc7e}
 
 .install-link{color:#f5dab5;margin-left:auto;margin-right:1rem;font:inherit;text-decoration:none}.site-header{flex-wrap:wrap;gap:12px}
+
+/* Keep motion visible above the backdrop and beneath the data. */
+.scene-art{z-index:0}.scene-shade{z-index:1}.scene-motion{z-index:2}
+.fireflies{z-index:3}.lcd-page{z-index:4}
