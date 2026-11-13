@@ -9,7 +9,22 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
-## Correcciones de la interfaz
+## V1.6.3 · 13 de noviembre de 2026
+
+- La pantalla HASHRATE usa la media local de los últimos 10 segundos, igual que
+  `/api/status`, sin depender del intervalo de refresco de la página.
+- La animación respeta el título, las unidades y los textos de esa pantalla.
+- Al pie de HASHRATE aparece `http://<IP-de-la-placa>/settings` para configurar
+  el minero desde un navegador conectado a la misma Wi-Fi.
+- Un candidato a bloque solo se cuenta cuando el pool acepta el envío.
+- El tema KI Room tiene efectos decorativos y aviso de shares; todavía no incluye
+  una celebración específica de bloque. La dirección BTC configurada se envía al
+  pool; la placa no realiza transferencias y el pago depende del pool.
+
+La versión del firmware y del instalador se obtiene de `src/version.h`.
+El instalador añade el identificador del commit para distinguir cada compilación.
+
+## Correcciones anteriores de la interfaz
 
 - El hashrate ignora los repintados con intervalo cero para no contaminar la media.
 - Los kH/s grandes se muestran como un número continuo, con decimal alineado.
@@ -89,7 +104,8 @@ Los entornos estáticos son `ESP32-2432S028R-Room-Static` y
 1. Conéctate a la red Wi-Fi **`NerdMinerAP`**, con contraseña **`MineYourCoins`**.
 2. Abre el portal de configuración y establece tu red Wi-Fi, dirección pública
    de wallet BTC y pool compatible con NerdMiner.
-3. Una vez conectado a tu red, abre `http://<IP-de-la-placa>/` para ver el
+3. Consulta la IP en la parte inferior de la pantalla **HASHRATE**. Una vez
+   conectado a tu red, abre `http://<IP-de-la-placa>/` para ver el
    monitor y `http://<IP-de-la-placa>/settings` para cambiar los ajustes.
 4. El acceso inicial a los ajustes usa **`admin` / `MineYourCoins`**; puedes
    cambiar la contraseña desde esa página.
@@ -416,7 +432,7 @@ Fill in **Backup pool URL**, port and (optionally) password to have the miner ca
 `http://<miner IP address>/api/status` returns the miner's state as JSON, for Home Assistant, Grafana or your own scripts. It needs no login and holds nothing the screen doesn't show (no wallet address, no passwords):
 
 ```json
-{"version":"V1.5.0","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
+{"version":"V1.6.3","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
  "total_mhashes":59113,"mining_time_s":60789,"templates":2108,"best_diff":5.26,"shares_32bit":9,
  "blocks_found":0,"shares_accepted":412,"shares_rejected":0,
  "pool":{"address":"btc.heliospool.com","port":3333,"backup":false,"subscribed":true,"difficulty":0.0007},
