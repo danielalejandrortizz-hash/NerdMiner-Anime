@@ -118,13 +118,15 @@
     }else{
       glow(206,195,17,'#d5adff',.3+.16*Math.sin(t*2.8));
     }
-    // Petals drift through the foreground.
-    for(let i=0;i<20;i++){
-      const x=(((i*37+t*(8+i%3))%370)+370)%370-25;
-      const y=30+((i*29+t*(5+i%2))%205);
-      ctx.save();ctx.translate(x,y);ctx.rotate(t*.6+i);
-      ctx.fillStyle=i%2?'#f5bad8':'#ffe5aa';ctx.globalAlpha=.95;
-      ctx.beginPath();ctx.ellipse(0,0,2.4,1.1,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    // Layered petals: fractional positions, gentle sway and a soft outline.
+    for(let i=0;i<28;i++){
+      const x=(((i*37+t*(8+i%3))%370)+370)%370-25+Math.sin(t*.9+i)*5;
+      const y=-12+(((i*29+t*(5+i%2))%264)+264)%264+Math.sin(t*.65+i)*2;
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*.5+i);
+      ctx.shadowColor='#633346';ctx.shadowBlur=1.5;ctx.shadowOffsetY=.6;
+      ctx.fillStyle=i%2?'#ffd0e9':'#fff0bc';ctx.globalAlpha=.96;
+      ctx.beginPath();ctx.ellipse(0,0,2.6+(i%3)*.45,1.25+(i%2)*.3,0,0,Math.PI*2);
+      ctx.fill();ctx.restore();
     }
 
   }

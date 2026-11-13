@@ -1374,7 +1374,12 @@ void esp32_2432S028R_AnimateCurrentScreen(unsigned long frame)
     return;
   }
 #endif
+#ifdef CYD_THEME_ROOM
+  // Preserve Pulse's original breathing speed when Room polls more frequently.
+  drawPulse(millis() / 100);
+#else
   drawPulse(frame);
+#endif
   if (uiScreen == SCR_MINE && fabsf(gaugeTarget - gaugeShown) > 0.002f)
   {
     gaugeShown += (gaugeTarget - gaugeShown) * 0.3f; // ease toward the measured rate

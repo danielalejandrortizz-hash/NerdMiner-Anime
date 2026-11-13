@@ -70,3 +70,19 @@ with tempfile.TemporaryDirectory(prefix='room-navigation-') as folder:
                     str(folder/'test.cpp'), '-o', str(folder/'test')], check=True)
     subprocess.run([str(folder/'test')], check=True)
 print('OK: first clock visit, missing time sync, 100 page changes, no network dependency')
+
+# Use the production monitor delay: a faster particle renderer must not be
+# capped by the old 100 ms task sleep. Static/non-Room builds keep that sleep.
+mining = (root / 'src/mining.cpp').read_text()
+start = mining.index('#if defined(CYD_THEME_ROOM) && !defined(CYD_ROOM_STATIC)')
+end = mining.index('#endif', start) + len('#endif')
+timing = mining[start:end]
+with tempfile.TemporaryDirectory(prefix='room-timing-') as folder:
+    folder = Path(folder)
+    for flags, expected in [(['-DCYD_THEME_ROOM=1'], 10),
+                            (['-DCYD_THEME_ROOM=1', '-DCYD_ROOM_STATIC=1'], 100),
+                            ([], 100)]:
+        (folder/'timing.cpp').write_text(timing + f'\nstatic_assert(DELAY == {expected}, "UI scheduling");\nint main(){{}}\n')
+        subprocess.run(['g++', '-std=c++11', *flags, str(folder/'timing.cpp'),
+                        '-o', str(folder/'timing')], check=True)
+print('OK: animated monitor scheduling; static and other builds retain their delay')

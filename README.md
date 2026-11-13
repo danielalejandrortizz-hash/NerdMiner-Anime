@@ -9,7 +9,7 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
-**Versión V1.6.6** · [Historial de versiones y cambios](CHANGELOG.md)
+**Versión V1.6.7** · [Historial de versiones y cambios](CHANGELOG.md)
 
 ## Los cuatro paisajes de KI Room
 
@@ -134,8 +134,8 @@ de movimiento reducido del navegador.
 del cuerpo y los brazos, chispas de minería y energía azul o dorada; Pikachu,
 respiración y descargas; Charmander, respiración, brillo de fuego y brasas.
 El lago tiene ondas y reflejos. Los efectos se generan a partir de las imágenes
-guardadas en flash, con actualizaciones limitadas a 8 por segundo y sin un
-framebuffer completo. Se mantienen libres las zonas de texto en MINA, MERCADO,
+guardadas en flash, con la escena limitada a 8 actualizaciones por segundo
+y los pétalos a un máximo aproximado de 16, sin un framebuffer completo. Se mantienen libres las zonas de texto en MINA, MERCADO,
 RELOJ, DETALLE DE MINERÍA y HASHRATE. El selector TEMAS conserva sus miniaturas.
 
 Para verlos en una placa que ya tiene KI Room, instala el firmware actualizado
@@ -409,7 +409,7 @@ Fill in **Backup pool URL**, port and (optionally) password to have the miner ca
 `http://<miner IP address>/api/status` returns the miner's state as JSON, for Home Assistant, Grafana or your own scripts. It needs no login and holds nothing the screen doesn't show (no wallet address, no passwords):
 
 ```json
-{"version":"V1.6.6","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
+{"version":"V1.6.7","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
  "total_mhashes":59113,"mining_time_s":60789,"templates":2108,"best_diff":5.26,"shares_32bit":9,
  "blocks_found":0,"shares_accepted":412,"shares_rejected":0,
  "pool":{"address":"btc.heliospool.com","port":3333,"backup":false,"subscribed":true,"difficulty":0.0007},

@@ -322,6 +322,58 @@ static void roomChrome(int screen)
 // decoder, extra image frames, full-screen framebuffer or heap allocation.
 
 #ifndef CYD_ROOM_STATIC
+// Positions use 1/256-pixel units, so edge coverage changes smoothly between
+// LCD pixels. Compute trajectories once per frame, never inside the pixel loop.
+static const int ROOM_PETAL_COUNT = 28;
+struct RoomPetal { int32_t x, y; uint8_t rx, ry; };
+
+static void roomPetalPositions(unsigned long now, RoomPetal *petals)
+{
+  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
+    petals[i].x = int32_t((i * 37 * 256ULL + uint64_t(now) * 256 / (110 - (i % 3) * 10)) % (370 * 256)) - 25 * 256;
+    petals[i].y = int32_t((i * 29 * 256ULL + uint64_t(now) * 256 / (180 + (i % 2) * 30)) % (256 * 256)) - 8 * 256;
+    petals[i].rx = 3 + (i % 3 == 0);
+    petals[i].ry = 1 + (i % 2);
+  }
+}
+
+static void roomPetalDirty(uint8_t *dirty, int x0, int y, int width, const RoomPetal *petals)
+{
+  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
+    const RoomPetal &p = petals[i];
+    if (abs(y * 256 - p.y) > p.ry * 256) continue;
+    int left = p.x / 256 - p.rx - 1 - x0;
+    int right = p.x / 256 + p.rx + 1 - x0;
+    if (left < 0) left = 0;
+    if (right >= width) right = width - 1;
+    for (int x = left; x <= right; ++x) dirty[x] = 1;
+  }
+}
+
+static void roomPetalsOnRow(uint16_t *row, const uint8_t *dirty, int x0, int y,
+                            int width, const RoomPetal *petals)
+{
+  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
+    const RoomPetal &p = petals[i];
+    const int dy = y * 256 - p.y;
+    if (abs(dy) > p.ry * 256) continue;
+    const int radius = p.rx * p.rx * p.ry * p.ry * 65536;
+    const uint16_t color = i % 2 ? RGB565(255,208,233) : RGB565(255,240,188);
+    int left = p.x / 256 - p.rx - 1 - x0;
+    int right = p.x / 256 + p.rx + 1 - x0;
+    if (left < 0) left = 0;
+    if (right >= width) right = width - 1;
+    for (int x = left; x <= right; ++x) {
+      if (!dirty[x]) continue;
+      const int dx = (x + x0) * 256 - p.x;
+      const int distance = dx * dx * p.ry * p.ry + dy * dy * p.rx * p.rx;
+      if (distance >= radius) continue;
+      const int coverage = (radius - distance) * 255 / (radius / 2);
+      row[x] = mix565(row[x], color, coverage > 255 ? 255 : coverage);
+    }
+  }
+}
+
 static bool roomAnimationProtected(int x, int y)
 {
   if (uiScreen == SCR_MINE)
@@ -358,12 +410,17 @@ static void roomAnimate(unsigned long frame)
   // Static builds still expire share notifications but perform no scene redraws.
 #ifndef CYD_ROOM_STATIC
   static unsigned long last = 0;
-  static int lastTheme = -1, lastScreen = -1;
+  static int lastTheme = -1, lastScreen = -1, lastPhase = -1;
+  static RoomPetal previousPetals[ROOM_PETAL_COUNT];
+  static bool havePreviousPetals = false;
   if (lastTheme == roomTheme && lastScreen == uiScreen &&
-      (unsigned long)(now - last) < 125)
+      (unsigned long)(now - last) < 62)
     return;
-  last = now; lastTheme = roomTheme; lastScreen = uiScreen;
   const unsigned phase = (now / 125) % 32;
+  const bool sceneChanged = lastTheme != roomTheme || lastScreen != uiScreen || lastPhase != int(phase);
+  last = now; lastTheme = roomTheme; lastScreen = uiScreen; lastPhase = phase;
+  RoomPetal petals[ROOM_PETAL_COUNT];
+  roomPetalPositions(now, petals);
   static const int8_t wave[32] = {0,3,6,9,11,13,15,16,16,16,15,13,11,9,6,3,
                                 0,-3,-6,-9,-11,-13,-15,-16,-16,-16,-15,-13,-11,-9,-6,-3};
   const bool goku = roomTheme < 2;
@@ -392,8 +449,13 @@ static void roomAnimate(unsigned long frame)
   uint16_t row[140];
   for (int y = 118; y < 219; ++y)
   {
+    uint8_t dirty[140] = {};
+    if (sceneChanged) for (int dx = 0; dx < 140; ++dx) dirty[dx] = 1;
+    if (havePreviousPetals) roomPetalDirty(dirty, 174, y, 140, previousPetals);
+    roomPetalDirty(dirty, 174, y, 140, petals);
     for (int dx = 0; dx < 140; ++dx)
     {
+      if (!dirty[dx]) continue;
       const int x = 174 + dx;
       int sy = y;
       if (goku && x >= 177 && x < 250 && y >= 145 && y < 214)
@@ -427,50 +489,37 @@ static void roomAnimate(unsigned long frame)
       if (roomTheme == 2 && phase % 12 < 4 && x >= 278 && x <= 287 &&
           y == 169 + (x-278)/2 + ((x + int(phase)) % 3))
         color = energy;
-      for (int i = 0; i < 20; ++i) {
-        const int px = int((i * 37 + now / (125 - (i % 3) * 12)) % 370) - 25;
-        const int py = 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205);
-        if (y >= py && y < py + 2 && x >= px && x < px + 4)
-          color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 230);
-      }
       row[dx] = color;
     }
+    roomPetalsOnRow(row, dirty, 174, y, 140, petals);
     int start = 0;
     while (start < 140)
     {
-      while (start < 140 && roomAnimationProtected(174 + start, y)) ++start;
+      while (start < 140 && (!dirty[start] || roomAnimationProtected(174 + start, y))) ++start;
       int end = start;
-      while (end < 140 && !roomAnimationProtected(174 + end, y)) ++end;
+      while (end < 140 && dirty[end] && !roomAnimationProtected(174 + end, y)) ++end;
       if (end > start) roomPushRow(174 + start, y, end-start, row+start);
       start = end;
     }
   }
   // The demo's lake polygon and drifting petals share one restored row pass.
   // Every old petal is erased from flash; widgets are never overwritten.
-  static unsigned long previousLandscapeAt = 0;
-  const unsigned long oldLandscapeAt = previousLandscapeAt;
-  previousLandscapeAt = now;
   uint16_t landscape[SCR_W];
   for (int y = 30; y < 240; ++y)
   {
-    bool petalRow = false, oldPetalRow = false;
-    for (int i = 0; i < 20; ++i)
-    {
-      if (y >= 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205) &&
-          y < 32 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205)) petalRow = true;
-      if (y >= 30 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205) &&
-          y < 32 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205)) oldPetalRow = true;
-    }
-    if (!petalRow && !oldPetalRow && (y < 165 || y >= 214)) continue;
+    uint8_t dirty[SCR_W] = {};
+    if (havePreviousPetals) roomPetalDirty(dirty, 0, y, SCR_W, previousPetals);
+    roomPetalDirty(dirty, 0, y, SCR_W, petals);
     for (int x = 0; x < SCR_W; ++x)
     {
-      // Character region was already composited above.
-      if (x >= 174 && x < 314 && y >= 118 && y < 219) continue;
       int sx = x;
       const bool water = y >= 165 && y < 214 &&
         y >= 178 - x * 13 / 90 &&
         (y < 191 ? x < 224 - (y - 165) * 38 / 26 :
          y < 205 ? x < 186 - (y - 191) * 68 / 14 : x < 118 - (y - 205) * 118 / 9);
+      if (sceneChanged && water) dirty[x] = 1;
+      if ((x >= 174 && x < 314 && y >= 118 && y < 219) || roomAnimationProtected(x, y)) dirty[x] = 0;
+      if (!dirty[x]) continue;
       if (water) sx += wave[(phase + y * 3) % 32] / 7;
       if (sx < 0) sx = 0;
       if (sx >= SCR_W) sx = SCR_W - 1;
@@ -478,28 +527,23 @@ static void roomAnimate(unsigned long frame)
       if (water && x > 103 - (y - 168) / 4 &&
           x < 112 + (y - 168) / 2 && (y + phase) % 5 == 0)
         color = mix565(color, RGB565(255,218,145), 65);
-      if (petalRow)
-        for (int i = 0; i < 20; ++i)
-        {
-          const int px = int((i * 37 + now / (125 - (i % 3) * 12)) % 370) - 25;
-          const int py = 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205);
-          if (y >= py && y < py + 2 && x >= px && x < px + 4)
-            color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 230);
-        }
       landscape[x] = color;
     }
+    roomPetalsOnRow(landscape, dirty, 0, y, SCR_W, petals);
     int start = 0;
     while (start < SCR_W)
     {
-      while (start < SCR_W && (roomAnimationProtected(start,y) ||
+      while (start < SCR_W && (!dirty[start] || roomAnimationProtected(start,y) ||
              (start >= 174 && start < 314 && y >= 118 && y < 219))) ++start;
       int end = start;
-      while (end < SCR_W && !roomAnimationProtected(end,y) &&
+      while (end < SCR_W && dirty[end] && !roomAnimationProtected(end,y) &&
              !(end >= 174 && end < 314 && y >= 118 && y < 219)) ++end;
       if (end > start) roomPushRow(start,y,end-start,landscape+start);
       start = end;
     }
   }
+  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) previousPetals[i] = petals[i];
+  havePreviousPetals = true;
 #endif
 }
 

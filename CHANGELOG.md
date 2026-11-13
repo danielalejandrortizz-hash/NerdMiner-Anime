@@ -2,6 +2,20 @@
 
 [Volver al README](README.md)
 
+## V1.6.7 · 13 de noviembre de 2026
+
+- Pétalos más visibles en la demo y el firmware: 28 en vez de 20, mayor tamaño
+  y tonos rosa y crema más luminosos.
+- En la placa, los pétalos se actualizan cada 62 ms (hasta unas 16 veces por
+  segundo), con posiciones fraccionarias y bordes suavizados; la escena conserva
+  su ritmo anterior. El bucle de pantalla despierta con más frecuencia para
+  permitir esa cadencia; el muestreo de datos sigue siendo de un segundo.
+- Trayectorias calculadas una vez por fotograma y repintado limitado a las zonas
+  que cambian, borrando también las posiciones anteriores de cada pétalo.
+- En la web, los pétalos tienen balanceo, variación de tamaño y una sombra suave.
+- Pruebas de movimiento, protección de los textos, borrado de rastros y límite
+  de píxeles enviados por fotograma. El rendimiento real requiere prueba en placa.
+
 ## V1.6.6 · 13 de noviembre de 2026
 
 - Historial de versiones trasladado a este archivo para acortar el README.

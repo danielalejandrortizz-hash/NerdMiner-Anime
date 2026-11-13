@@ -2177,7 +2177,13 @@ void minerWorkerHw(void * task_id)
 #endif  //HARDWARE_SHA265
 
 
+// The animated Room renderer throttles its own scene/particle updates. Wake
+// often enough to reach that cadence; data sampling still uses the 1 s clock.
+#if defined(CYD_THEME_ROOM) && !defined(CYD_ROOM_STATIC)
+#define DELAY 10
+#else
 #define DELAY 100
+#endif
 #define REDRAW_EVERY 10
 
 // ---------------------------------------------------------------------------

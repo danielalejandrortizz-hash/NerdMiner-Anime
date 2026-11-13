@@ -28,6 +28,7 @@ unsigned long millis(){return fakeMs;}
 static constexpr int WL_CONNECTED=3;
 static struct { int state=WL_CONNECTED; int status(){return state;} } WiFi;
 static unsigned pushes=0;
+static uint64_t pushedPixels=0;
 static size_t peakSprite=0;
 static bool failSpriteAlloc=false;
 static unsigned spriteRequests=0;
@@ -40,7 +41,7 @@ struct TFT_eSPI {
   std::vector<uint16_t> pixels=std::vector<uint16_t>(320*240);
   void drawPixel(int x,int y,uint16_t c){if(x>=0&&y>=0&&x<width&&y<height)pixels[y*width+x]=c;}
   void pushImage(int x,int y,int w,int h,uint16_t *p){
-    assert(x>=0&&y>=0&&x+w<=width&&y+h<=height);++pushes;
+    assert(x>=0&&y>=0&&x+w<=width&&y+h<=height);++pushes;pushedPixels+=w*h;
     for(int row=0;row<h;row++)for(int col=0;col<w;col++)pixels[(y+row)*width+x+col]=p[row*w+col];
   }
   void setSwapBytes(bool value){swap=value;}bool getSwapBytes(){return swap;}
@@ -199,7 +200,23 @@ int main(int argc,char **argv){
           if(roomAnimationProtected(x,y)) assert(tft.pixels[y*320+x]==staticPixels[y*320+x]);
       }
       assert(moves);
-      if(uiScreen==SCR_MINE) save(path+"/animated-"+std::to_string(roomTheme)+".ppm");
+      if(uiScreen==SCR_MINE) {
+        // Petals refresh between the old 125 ms scene frames, with bounded
+        // LCD traffic. Their old footprints must not accumulate.
+        for(int frame=0;frame<16;++frame) {
+          const auto beforePixels=pushedPixels;
+          fakeMs+=63;roomAnimate(frame);
+          assert(pushedPixels>beforePixels);
+          assert(pushedPixels-beforePixels<28000);
+        }
+        const auto incremental=tft.pixels;
+        // A fresh redraw at the same time must match the incremental result:
+        // no old petals, water or character fragments may remain behind.
+        uiScreen=SCR_MARKET;resetWidgets();roomChrome(uiScreen);roomAnimate(0);
+        uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);roomAnimate(0);
+        assert(tft.pixels==incremental);
+        save(path+"/animated-"+std::to_string(roomTheme)+".ppm");
+      }
     }
     uiScreen=3;roomChrome(3);unsigned before=pushes;fakeMs+=1000;roomAnimate(1);assert(pushes==before);
   }
