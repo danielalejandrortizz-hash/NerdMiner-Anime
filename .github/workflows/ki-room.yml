@@ -17,7 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,8 +41,8 @@ jobs:
           restore-keys: pio-${{ runner.os }}-
       - name: Install build tools
         run: python -m pip install platformio==6.1.18 esptool==4.8.1
-      - name: Compile both CYD variants
-        run: pio run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room
+      - name: Compile animated and static firmware for both CYD variants
+        run: pio run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room -e ESP32-2432S028R-Room-Static -e ESP32_2432S028_2USB-Room-Static
       - name: Package web installer and binaries
         run: python tools/package_web.py --output _site --version "ki-${GITHUB_SHA::7}"
       - uses: actions/upload-artifact@v4
