@@ -9,14 +9,15 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-ENVIRONMENTS = ('ESP32-2432S028R-Room', 'ESP32_2432S028_2USB-Room')
+ENVIRONMENTS = ('ESP32-2432S028R-Room', 'ESP32_2432S028_2USB-Room',
+                'ESP32-2432S028R-Room-Static', 'ESP32_2432S028_2USB-Room-Static')
 
 
 def package(destination, version):
     destination = Path(destination)
     if destination.exists():
         raise ValueError('Output must be a new directory')
-    # Require both builds before creating any installable site.
+    # Require all four builds before creating any installable site.
     parts = {}
     for environment in ENVIRONMENTS:
         build = ROOT / '.pio/build' / environment
@@ -34,7 +35,7 @@ def package(destination, version):
     shutil.copytree(ROOT / 'web', destination)
     (destination / '.nojekyll').touch()
     assets = destination / 'assets'
-    assets.mkdir()
+    assets.mkdir(exist_ok=True)
     for scene in ('goku', 'saiyan', 'pikachu', 'charmander'):
         shutil.copy2(ROOT / f'artwork/ki-room/{scene}-sunset.png', assets)
     firmware_dir = destination / 'firmware'
@@ -51,7 +52,7 @@ def package(destination, version):
         update = firmware_dir / f'{environment}-update.bin'
         shutil.copy2(files[2], update)
         for mode, binary, offset in (('factory', factory, 0), ('update', update, 0x10000)):
-            manifest = {'name': 'NerdMiner Anime KI Room', 'version': version,
+            manifest = {'name': 'KI Room · ' + ('Sin animación' if environment.endswith('-Static') else 'Animada'), 'version': version,
                         'new_install_prompt_erase': True, 'new_install_improv_wait_time': 0,
                         'builds': [{'chipFamily': 'ESP32', 'parts': [{'path': binary.name, 'offset': offset}]}]}
             (firmware_dir / f'{environment}-{mode}.json').write_text(json.dumps(manifest, indent=2) + '\n')
