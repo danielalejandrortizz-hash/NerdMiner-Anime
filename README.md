@@ -2,11 +2,16 @@
 
 Tu NerdMiner con **Goku, Super Saiyan, Pikachu y Charmander**, reloj,
 estadísticas de minería y un selector táctil para cambiar de personaje y
-una pantalla con los kH/s en grande.
+una pantalla con los kH/s en grande. La **demo animada es la portada principal**
+y el firmware animado es la opción predeterminada para la placa.
+
+**[Ver la demo animada](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)** ·
+**[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
+**[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
 ## Los cuatro paisajes de KI Room
 
-Las mismas ilustraciones que puedes previsualizar en el [instalador web](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/), incluidas en el firmware.
+Las mismas ilustraciones que puedes previsualizar en la [demo animada](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/), incluidas en el firmware.
 
 | Goku | Super Saiyan |
 | :---: | :---: |
@@ -16,20 +21,24 @@ Las mismas ilustraciones que puedes previsualizar en el [instalador web](https:/
 
 ## Instalar en tu placa desde el navegador
 
-### [⚡ ABRIR EL INSTALADOR DE NERDMINER ANIME](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
+### [⚡ ABRIR EL INSTALADOR DE NERDMINER ANIME](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)
 
-La web está publicada en GitHub Pages, ambientada en Goku y con los cuatro
-paisajes animados directamente en la imagen principal: selecciona un personaje
-para ver sus efectos y usa **Pausar animación** cuando quieras detenerlos.
+La portada de GitHub Pages es la demo interactiva: cambia de personaje y de
+pantalla (Paisaje, Reloj, Bitcoin, Minería o Temas), ajusta la luz, pausa los
+efectos o compara con la imagen original. La hora usa tu navegador y los datos
+de minería son de ejemplo. Pulsa **Instalar en mi minero** para abrir el instalador.
+
 **No necesitas instalar PlatformIO
 ni compilar en tu ordenador para usar el instalador web.**
 
 1. Abre el instalador en **Chrome o Edge desde un ordenador**.
 2. Conecta la placa con un **cable USB de datos**.
 3. Selecciona el modelo exacto de tu placa en el desplegable.
-4. Si es la primera vez, elige **Instalación completa**.
-5. Pulsa **Instalar en mi placa**, selecciona el puerto USB y sigue el diálogo.
-6. Al terminar, configura tu Wi-Fi, dirección pública de wallet BTC y pool.
+4. Elige **Animada** (predeterminada) o **Sin animación**.
+5. Si es la primera vez, elige **Instalación completa**.
+6. Pulsa **Instalar en mi placa**, selecciona el puerto USB y sigue el diálogo.
+   También puedes usar **Descargar archivo .bin** para guardar el firmware elegido.
+7. Al terminar, configura tu Wi-Fi, dirección pública de wallet BTC y pool.
 
 **La instalación completa puede borrar la configuración anterior.** Incluye
 el arranque, las particiones y el firmware. La opción **Actualizar** es para
@@ -50,6 +59,19 @@ Comprueba la referencia en la parte trasera. **El tema KI Room y este
 instalador están preparados para estas CYD de 2,8″; no incluyen versiones
 Room para las CYD de 3,5″ o 4″ ni para las demás placas del proyecto base.**
 La variante de dos USB conserva la inversión de colores de su entorno base.
+
+### Animada o sin animación
+
+Ambas versiones incluyen los cuatro personajes, las mismas pantallas y datos
+reales de minería. La animada añade movimiento y efectos decorativos.
+La versión **Sin animación** excluye esos efectos durante la compilación para
+reducir el trabajo de pantalla; conserva el reloj, los datos y los avisos de shares.
+No se ha medido aún la diferencia de hashrate en una placa física.
+
+Para descargarla, abre [la opción sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar),
+selecciona tu placa y el tipo de instalación y pulsa **Descargar archivo .bin**.
+Los entornos estáticos son `ESP32-2432S028R-Room-Static` y
+`ESP32_2432S028_2USB-Room-Static`.
 
 ### Configuración después de instalar
 
@@ -93,7 +115,7 @@ indicaciones de su pantalla o consulta la lista de dispositivos de tu router.
 
 ### Los cuatro personajes animados
 
-La imagen principal del [instalador web](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
+La [demo principal](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/)
 se anima directamente al elegir cada personaje:
 
 - Ondas y reflejos en el lago, con pétalos en movimiento.
@@ -114,7 +136,7 @@ framebuffer completo. Se mantienen libres las zonas de texto en MINA, MERCADO,
 RELOJ, DETALLE DE MINERÍA y HASHRATE. El selector TEMAS conserva sus miniaturas.
 
 Para verlos en una placa que ya tiene KI Room, instala el firmware actualizado
-desde el [instalador](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/).
+desde el [instalador](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar).
 La animación del ESP32 es una adaptación ligera, no una reproducción exacta del
 Canvas del navegador. Pantalla, fluidez y efecto sobre el hashrate requieren
 pruebas en una placa física.
@@ -137,12 +159,13 @@ CYD, los entornos Room y el instalador. Se mantienen la licencia y los créditos
 
 **Comprobado:**
 
-- Ambos entornos CYD Room compilan con el SDK de ESP32 en GitHub Actions.
+- Los cuatro entornos CYD Room (animados y estáticos, para uno y dos USB) compilan con el SDK de ESP32 en GitHub Actions.
 - Ocupan aproximadamente **2,47 MB de flash**, un **78,4 %** de la partición de
   aplicación; la RAM estática es **58.536 bytes**, un **17,9 %**. Esto no mide
   el consumo de heap durante el uso.
 - Las pruebas de escritorio del renderizador pasan con ASan/UBSan: escenas,
-  reloj, menú, desconexión, caché y expiración del aviso de share.
+  reloj, menú, desconexión, caché y expiración del aviso de share; la variante
+  estática no realiza repintados decorativos.
 - Las pruebas del instalador comprueban archivos ausentes, rutas de GitHub
   Pages y cambios de selección. Sin binarios disponibles, no permite instalar.
 - La compilación, el empaquetado y el despliegue de GitHub Pages han finalizado correctamente.
