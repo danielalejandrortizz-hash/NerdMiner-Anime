@@ -35,7 +35,7 @@
 #ifdef CYD_THEME_ROOM
 #include "mining.h"
 #include "media/room/RoomAssets.h"
-// Four illustrated scenes; legacy Pulse preferences migrate to Goku.
+// Four illustrated scenes plus the existing Pulse renderer.
 static uint8_t roomTheme = 0;
 static uint8_t savedRoomTheme = 0;
 static bool roomActive() { return roomTheme < 4; }
@@ -44,7 +44,6 @@ static void roomAnimate(unsigned long frame);
 static void roomSelectTheme(uint8_t theme);
 static void roomThemeScreen(unsigned long elapsed);
 static void roomStatsScreen(unsigned long elapsed);
-static void roomHashrateScreen(unsigned long elapsed);
 #endif
 
 #define WIDTH 130
@@ -863,7 +862,7 @@ static void paintSetup(TFT_eSPI &d)
 static void paintChrome(TFT_eSPI &d, int scr)
 {
 #ifdef CYD_THEME_ROOM
-  if (scr == 3 || scr == 4 || scr == 5 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK || scr == SCR_MARKET)))
+  if (scr == 3 || scr == 4 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK || scr == SCR_MARKET)))
   {
     roomChrome(scr);
     return;
@@ -921,7 +920,6 @@ static void repaintCached(int scr)
 {
 #ifdef CYD_THEME_ROOM
   if (scr == 4) { roomStatsScreen(0); return; }
-  if (scr == 5) { roomHashrateScreen(0); return; }
   if (scr == 3)
   {
     roomChrome(scr);
@@ -939,7 +937,7 @@ static void repaintCached(int scr)
 #ifdef CYD_THEME_ROOM
 static void roomSelectTheme(uint8_t theme)
 {
-  roomTheme = theme < 4 ? theme : 0;
+  roomTheme = theme <= 4 ? theme : 0;
   currentDisplayDriver->current_cyclic_screen = SCR_MINE;
   uiScreen = -1;
   if (uiLive)
@@ -975,14 +973,6 @@ static void roomStatsScreen(unsigned long elapsed)
                  WiFi.status() == WL_CONNECTED ? data.currentHashRate : String("--"));
 }
 
-static void roomHashrateScreen(unsigned long elapsed)
-{
-  mining_data data = getMiningData(elapsed);
-  uiLive = true;
-  ensureChrome(5);
-  roomPaintHashrate(WiFi.status() == WL_CONNECTED ? data.currentHashRate : String("--"));
-}
-
 static void roomThemeScreen(unsigned long elapsed)
 {
   (void)elapsed;
@@ -1010,7 +1000,7 @@ static void loadUiPrefs()
   int page = p.getUChar("page", 0);
 #ifdef CYD_THEME_ROOM
   roomTheme = p.getUChar("room", 0);
-  if (roomTheme >= 4)
+  if (roomTheme > 4)
     roomTheme = 0;
   savedRoomTheme = roomTheme;
 #endif
@@ -1361,7 +1351,7 @@ enum TouchAction
   TA_BACKLIGHT,
   TA_ACCENT
 #ifdef CYD_THEME_ROOM
-  , TA_ROOM_GOKU, TA_ROOM_SAIYAN, TA_ROOM_PIKACHU, TA_ROOM_CHARMANDER
+  , TA_ROOM_GOKU, TA_ROOM_SAIYAN, TA_ROOM_PIKACHU, TA_ROOM_CHARMANDER, TA_ROOM_PULSE
 #endif
 };
 static volatile int pendingTouch = TA_NONE;
@@ -1393,6 +1383,9 @@ static void touchTask(void *)
           if ((t_x - 12) % 152 < 144 && (t_y - 45) % 72 < 64)
             pendingTouch = TA_ROOM_GOKU + row * 2 + col;
         }
+        else if (currentDisplayDriver->current_cyclic_screen == 3 &&
+                 t_x >= 12 && t_x < 308 && t_y >= 190 && t_y < 218)
+          pendingTouch = TA_ROOM_PULSE;
 #endif
         else if (t_y < HDR_H + 4 && t_x < 110)
           pendingTouch = TA_ACCENT; // wordmark: next accent colour
@@ -1442,6 +1435,7 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
   case TA_ROOM_SAIYAN:
   case TA_ROOM_PIKACHU:
   case TA_ROOM_CHARMANDER:
+  case TA_ROOM_PULSE:
     roomSelectTheme(action - TA_ROOM_GOKU);
     break;
 #endif
@@ -1580,7 +1574,7 @@ void cydDumpScreens(void)
 
 CyclicScreenFunction esp32_2432S028RCyclicScreens[] = {esp32_2432S028R_MinerScreen, esp32_2432S028R_MarketScreen, esp32_2432S028R_ClockScreen
 #ifdef CYD_THEME_ROOM
-    , roomThemeScreen, roomStatsScreen, roomHashrateScreen
+    , roomThemeScreen, roomStatsScreen
 #endif
 };
 
@@ -1598,4 +1592,3 @@ DisplayDriver esp32_2432S028RDriver = {
     WIDTH,
     HEIGHT};
 #endif
-
