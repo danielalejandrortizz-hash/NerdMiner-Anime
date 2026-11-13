@@ -125,6 +125,21 @@ int main(int argc,char **argv){
     for (const char *value : {"0.0", "1000.0", "12345.6", "--", "9.0"}) roomPaintHashrate(value);
     uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
   }
+#ifdef CYD_ROOM_STATIC
+  // Static firmware must never repaint a decorative scene, across all pages.
+  for (roomTheme=0; roomTheme<4; ++roomTheme) {
+    for (uiScreen=0; uiScreen<=5; ++uiScreen) {
+      resetWidgets();roomChrome(uiScreen);
+      const auto pixels=tft.pixels;
+      const unsigned before=pushes;
+      for (int frame=0; frame<32; ++frame) {
+        fakeMs+=125;roomAnimate(frame);
+      }
+      assert(pushes==before);
+      assert(tft.pixels==pixels);
+    }
+  }
+#else
   // Exercise actual firmware animation: every character moves, widgets remain
   // intact, updates are throttled, and menu/Pulse pages stay untouched.
   for (roomTheme=0; roomTheme<4; ++roomTheme) {
@@ -155,6 +170,7 @@ int main(int argc,char **argv){
     }
     uiScreen=3;roomChrome(3);unsigned before=pushes;fakeMs+=1000;roomAnimate(1);assert(pushes==before);
   }
+#endif
   roomTheme=4;uiScreen=SCR_MINE;unsigned beforePulse=pushes;roomAnimate(1);assert(pushes==beforePulse);
   roomTheme=0;uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);
   roomShareKnown=false;g_shareFoundEvents=7;roomPaintMine(m);assert(!roomShareVisible);
