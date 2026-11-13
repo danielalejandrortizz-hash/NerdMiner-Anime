@@ -21,6 +21,7 @@ document.querySelectorAll('[data-scene]').forEach((button, index) => {
 });
 const board = document.querySelector('#board');
 const mode = document.querySelector('#install-mode');
+const animationMode = document.querySelector('#animation-mode');
 const installer = document.querySelector('#installer');
 const state = document.querySelector('#build-state');
 const download = document.querySelector('#download');
@@ -40,7 +41,8 @@ async function selectFirmware() {
   }
   state.textContent = 'Comprobando firmware disponible…';
   try {
-    const manifestUrl = `firmware/${board.value}-${mode.value}.json`;
+    const environment = board.value + (animationMode.value === 'static' ? '-Static' : '');
+    const manifestUrl = `firmware/${environment}-${mode.value}.json`;
     const response = await fetch(manifestUrl, { cache: 'no-store' });
     if (!response.ok) throw new Error('Firmware no disponible');
     const manifest = await response.json();
@@ -63,3 +65,9 @@ async function selectFirmware() {
 }
 board.addEventListener('change', selectFirmware);
 mode.addEventListener('change', selectFirmware);
+animationMode.addEventListener('change', selectFirmware);
+
+// Keep direct links from the demo aligned with the firmware selection.
+if (new URL(location.href).searchParams.get('animation') === 'static') {
+  animationMode.value = 'static';
+}
