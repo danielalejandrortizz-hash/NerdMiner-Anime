@@ -284,8 +284,9 @@ static bool roomAnimationProtected(int x, int y)
   if (uiScreen == 4)
     return x >= 12 && (x < 206 || y >= 196);
   if (uiScreen == 5)
-    return (y >= 87 && y < 147 && x >= 12 && x < 308) ||
-           (y >= 188 && y < 208 && x >= 42 && x < 278);
+    return (y >= 40 && y < 60) ||
+           (y >= 87 && y < 174 && x >= 12 && x < 308) ||
+           (y >= 186);
   return true;
 }
 
@@ -523,8 +524,15 @@ static void roomPaintStats(const String &best, const String &target, const Strin
 
 // Paint one proportional number through narrow tiles, keeping the decimal
 // on the same baseline and the scratch sprite below 10 KB.
-static void roomPaintHashrate(const String &hash)
+static void roomPaintHashrate(const String &hash, const String &ip = "--")
 {
+  const String address = "http://" + ip + "/settings";
+  if (need(W_DATE, address) && roomBegin(24, 216, 272, 18)) {
+    roomText(wgt, "CONFIGURAR (MISMA WIFI)", 136, 0, ROOM_DIM, 1, TC_DATUM);
+    roomText(wgt, address, 136, 9, ROOM_TEXT, 1, TC_DATUM);
+    wEnd(24, 216);
+    done(W_DATE, address);
+  }
   if (need(W_HDR, "hashrate")) {
     roomText(out(), "VELOCIDAD DE MINERIA", 160, 42, ROOM_DIM, 2, TC_DATUM);
     roomText(out(), "kH/s", 160, 153, ROOM_TEXT, 2, TC_DATUM);
@@ -541,6 +549,6 @@ static void roomPaintHashrate(const String &hash)
     wEnd(x, 87);
   }
   roomRestore(42, 188, 236, 20);
-  roomText(out(), value == "--" ? "SIN DATOS" : "HASHRATE ACTUAL", 160, 191, ROOM_DIM, 1, TC_DATUM);
+  roomText(out(), value == "--" ? "SIN DATOS" : "MEDIA LOCAL: ULTIMOS 10 S", 160, 191, ROOM_DIM, 1, TC_DATUM);
   done(W_HERO, value);
 }

@@ -126,8 +126,8 @@ int main(int argc,char **argv){
     uiScreen=4;resetWidgets();roomChrome(uiScreen);
     roomPaintStats(m.best, "120.00T", "3.98e-14 %", "24", "0", "990.0");save(path+"/stats-"+std::to_string(roomTheme)+".ppm");
     uiScreen=5;resetWidgets();roomChrome(uiScreen);
-    roomPaintHashrate("990.0");save(path+"/hashrate-"+std::to_string(roomTheme)+".ppm");
-    before=pushes;roomPaintHashrate("990.0");assert(pushes==before);
+    roomPaintHashrate("990.0", "192.168.1.123");save(path+"/hashrate-"+std::to_string(roomTheme)+".ppm");
+    before=pushes;roomPaintHashrate("990.0", "192.168.1.123");assert(pushes==before);
     for (const char *value : {"0.0", "1000.0", "12345.6", "--", "9.0"}) roomPaintHashrate(value);
     uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
   }
@@ -160,7 +160,7 @@ int main(int argc,char **argv){
       }
       if (uiScreen==SCR_CLOCK) {ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);}
       if (uiScreen==4) roomPaintStats(m.best,"120T","3.98e-14 %","24","0","990");
-      if (uiScreen==5) roomPaintHashrate("990.0");
+      if (uiScreen==5) roomPaintHashrate("990.0", "192.168.1.123");
       auto staticPixels=tft.pixels;
       fakeMs+=1000;roomAnimate(1);auto pose=tft.pixels;
       const unsigned before=pushes;roomAnimate(2);assert(pushes==before);

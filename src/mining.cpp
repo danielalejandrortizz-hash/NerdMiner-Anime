@@ -901,7 +901,7 @@ void runStratumWorker(void *name) {
                                             // more than once a second and made the buzzer beep non-stop.
                                             g_shareFoundEvents++;
                                           }
-                                          if (itt->second->isValid)
+                                          if (itt->second->isValid && accepted)
                                           {
                                             Serial.println("CONGRATULATIONS! Valid block found");
                                             valids++;

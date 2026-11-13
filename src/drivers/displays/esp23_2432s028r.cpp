@@ -973,11 +973,15 @@ static void roomStatsScreen(unsigned long elapsed)
 
 static void roomHashrateScreen(unsigned long elapsed)
 {
-  static String hash = "--";
-  if (elapsed > 0) hash = getMiningData(elapsed).currentHashRate;
+  (void)elapsed;
+  // Use the miner counter window, independent of page refresh timing.
+  const MinerStatus status = getMinerStatus();
+  const String hash = String(status.hashrateKHs, 1);
   uiLive = true;
   ensureChrome(5);
-  roomPaintHashrate(WiFi.status() == WL_CONNECTED ? hash : String("--"));
+  const bool connected = WiFi.status() == WL_CONNECTED;
+  roomPaintHashrate(connected ? hash : String("--"),
+                    connected ? WiFi.localIP().toString() : String("--"));
 }
 
 static void roomThemeScreen(unsigned long elapsed)
