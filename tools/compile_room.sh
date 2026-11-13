@@ -35,5 +35,5 @@ PY
     pio_command=("$build_venv/bin/python" -m platformio)
 fi
 mkdir -p "$repo_dir/.pio"
-"${pio_command[@]}" run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room 2>&1 | tee "$repo_dir/.pio/room-build.log"
+"${pio_command[@]}" run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room -e ESP32-2432S028R-Room-Static -e ESP32_2432S028_2USB-Room-Static 2>&1 | tee "$repo_dir/.pio/room-build.log"
 printf '\nCompilacion terminada. Los binarios estan en firmware/.\nNo se ha flasheado ninguna placa.\n'
