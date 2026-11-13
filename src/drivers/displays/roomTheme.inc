@@ -246,6 +246,8 @@ static void roomChrome(int screen)
 
 // Animation is generated from the flash image, one row at a time. No video
 // decoder, extra image frames, full-screen framebuffer or heap allocation.
+
+#ifndef CYD_ROOM_STATIC
 static bool roomAnimationProtected(int x, int y)
 {
   if (uiScreen == SCR_MINE)
@@ -265,6 +267,8 @@ static bool roomAnimationProtected(int x, int y)
   return true;
 }
 
+
+#endif
 static void roomAnimate(unsigned long frame)
 {
   (void)frame;
@@ -276,6 +280,8 @@ static void roomAnimate(unsigned long frame)
     roomRestore(14, 198, 144, 19);
     roomShareVisible = false;
   }
+  // Static builds still expire share notifications but perform no scene redraws.
+#ifndef CYD_ROOM_STATIC
   static unsigned long last = 0;
   static int lastTheme = -1, lastScreen = -1;
   if (lastTheme == roomTheme && lastScreen == uiScreen &&
@@ -317,13 +323,12 @@ static void roomAnimate(unsigned long frame)
       int sy = y;
       if (goku && x >= 177 && x < 250 && y >= 145 && y < 214)
       {
-        const int edgeX = (x - 177 < 249 - x) ? x - 177 : 249 - x;
-        const int edgeY = (y - 145 < 213 - y) ? y - 145 : 213 - y;
-        if (edgeX > 5 && edgeY > 4)
-        {
-          const int swing = y >= 165 && y < 190 ? wave[(phase * 2) % 32] : 0;
-          sy += (wave[phase] + swing) / 14;
-        }
+        // Taper the demo's breathing/mining stroke to zero at every edge.
+        const int taperX = wave[(x - 177) * 16 / 73];
+        const int taperY = wave[(y - 145) * 16 / 69];
+        const int strike = wave[(phase * 2) % 32];
+        const int arm = y >= 165 && y < 190 && strike > 0 ? strike : 0;
+        sy -= (wave[phase] + arm * 2) * taperX * taperY / 4096;
       }
       else if (!goku && x > 236 && x < 277 && y > 155 && y < 205)
         sy += wave[phase] / 16; // gentle breathing, one pixel each way
@@ -359,28 +364,60 @@ static void roomAnimate(unsigned long frame)
       start = end;
     }
   }
-  // Small lake strip: waves and warm reflections, without touching the metrics.
-  uint16_t water[140];
-  for (int y = 171; y < 193; ++y)
+  // The demo's lake polygon and drifting petals share one restored row pass.
+  // Every old petal is erased from flash; widgets are never overwritten.
+  static unsigned long previousLandscapeAt = 0;
+  const unsigned long oldLandscapeAt = previousLandscapeAt;
+  previousLandscapeAt = now;
+  uint16_t landscape[SCR_W];
+  for (int y = 30; y < 240; ++y)
   {
-    const int shift = wave[(phase + y * 3) % 32] / 7;
-    for (int x = 18; x < 158; ++x)
+    bool petalRow = false, oldPetalRow = false;
+    for (int i = 0; i < 20; ++i)
     {
-      uint16_t c = roomPixel(x + shift, y);
-      if (x > 82 && x < 115 && (y + phase) % 7 == 0)
-        c = mix565(c, RGB565(255,218,145), 55);
-      water[x-18] = c;
+      if (y == 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205)) petalRow = true;
+      if (y == 30 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205)) oldPetalRow = true;
     }
-    int start = 18;
-    while (start < 158)
+    if (!petalRow && !oldPetalRow && (y < 165 || y >= 214)) continue;
+    for (int x = 0; x < SCR_W; ++x)
     {
-      while (start < 158 && roomAnimationProtected(start, y)) ++start;
+      // Character region was already composited above.
+      if (x >= 174 && x < 314 && y >= 118 && y < 219) continue;
+      int sx = x;
+      const bool water = y >= 165 && y < 214 &&
+        y >= 178 - x * 13 / 90 &&
+        (y < 191 ? x < 224 - (y - 165) * 38 / 26 :
+         y < 205 ? x < 186 - (y - 191) * 68 / 14 : x < 118 - (y - 205) * 118 / 9);
+      if (water) sx += wave[(phase + y * 3) % 32] / 7;
+      if (sx < 0) sx = 0;
+      if (sx >= SCR_W) sx = SCR_W - 1;
+      uint16_t color = roomPixel(sx, y);
+      if (water && x > 103 - (y - 168) / 4 &&
+          x < 112 + (y - 168) / 2 && (y + phase) % 5 == 0)
+        color = mix565(color, RGB565(255,218,145), 65);
+      if (petalRow)
+        for (int i = 0; i < 20; ++i)
+        {
+          const int px = int((i * 37 + now / (125 - (i % 3) * 12)) % 370) - 25;
+          const int py = 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205);
+          if (y == py && x >= px && x < px + 3)
+            color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 205);
+        }
+      landscape[x] = color;
+    }
+    int start = 0;
+    while (start < SCR_W)
+    {
+      while (start < SCR_W && (roomAnimationProtected(start,y) ||
+             (start >= 174 && start < 314 && y >= 118 && y < 219))) ++start;
       int end = start;
-      while (end < 158 && !roomAnimationProtected(end, y)) ++end;
-      if (end > start) roomPushRow(start, y, end-start, water+start-18);
+      while (end < SCR_W && !roomAnimationProtected(end,y) &&
+             !(end >= 174 && end < 314 && y >= 118 && y < 219)) ++end;
+      if (end > start) roomPushRow(start,y,end-start,landscape+start);
       start = end;
     }
   }
+#endif
 }
 
 // Setup uses the selected illustration.
