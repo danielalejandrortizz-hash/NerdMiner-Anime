@@ -85,4 +85,13 @@ $('scene-art').onerror=()=>{
 $('scene-art').onload=()=>{const note=$('asset-error');if(note)note.remove()};
 const storedTheme=read('ki-animation-demo-theme'),storedView=read('ki-animation-demo-view');
 selectTheme(storedTheme===null?0:Number(storedTheme));selectPage(storedView===null?0:Number(storedView));toggleNight(read('ki-animation-demo-night')==='true');
+// Start paused when requested by the OS, but allow the user to resume explicitly.
+const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
+function applyMotionPreference(){
+  paused=motionPreference.matches;
+  lcd.classList.toggle('paused',paused);
+  $('pause').setAttribute('aria-checked',String(paused));
+}
+applyMotionPreference();
+motionPreference.addEventListener('change',applyMotionPreference);
 updateClock();setInterval(updateClock,1000);resizeDisplay();
