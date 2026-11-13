@@ -630,6 +630,10 @@ struct MarketV
   String price, block, fee, diff, net;
   int pct;
   String remaining;
+#ifdef CYD_THEME_ROOM
+  String best, shares;
+  bool poolLinked = false;
+#endif
   StripV strip;
 };
 
@@ -705,6 +709,9 @@ struct ClockV
   String hh, mm;
   bool colon;
   String date, price, block, hash;
+#ifdef CYD_THEME_ROOM
+  String weekday;
+#endif
 };
 
 #ifdef CYD_THEME_ROOM
@@ -942,7 +949,7 @@ static void repaintCached(int scr)
 #ifdef CYD_THEME_ROOM
 static void roomSelectTheme(uint8_t theme)
 {
-  roomTheme = theme <= 4 ? theme : 0;
+  roomTheme = theme < 4 ? theme : 0;
   currentDisplayDriver->current_cyclic_screen = SCR_MINE;
   uiScreen = -1;
   if (uiLive)
@@ -981,16 +988,16 @@ static void roomClockScreen()
   ClockV c;
   c.hh = "--";
   c.mm = "--";
-  c.date = "SIN HORA - ESPERANDO SINCRONIZACION";
+  c.weekday = "Sincronizando";
+  c.date = "Esperando la hora local";
   int hour, minute, second, day, month, year;
   if (getLocalClock(hour, minute, second, day, month, year)) {
-    char hh[3], mm[3], date[16];
+    char hh[3], mm[3];
     snprintf(hh, sizeof(hh), "%02d", hour);
     snprintf(mm, sizeof(mm), "%02d", minute);
-    snprintf(date, sizeof(date), "%02d/%02d/%04d", day, month, year);
     c.hh = hh;
     c.mm = mm;
-    c.date = fmtDate(date);
+    roomDateParts(day,month,year,c.weekday,c.date);
   }
   uiLive = true;
   ensureChrome(SCR_CLOCK);
@@ -1039,7 +1046,7 @@ static void loadUiPrefs()
   int page = p.getUChar("page", 0);
 #ifdef CYD_THEME_ROOM
   roomTheme = p.getUChar("room", 0);
-  if (roomTheme > 4)
+  if (roomTheme > 3)
     roomTheme = 0;
   savedRoomTheme = roomTheme;
 #endif
@@ -1169,9 +1176,9 @@ void esp32_2432S028R_MinerScreen(unsigned long mElapsed)
   int hour, minute, second, day, month, year;
   if (getLocalClock(hour, minute, second, day, month, year))
   {
-    char date[16];
-    snprintf(date, sizeof(date), "%02d/%02d/%04d", day, month, year);
-    m.date = fmtDate(date);
+    String weekday, calendarDate;
+    roomDateParts(day,month,year,weekday,calendarDate);
+    m.date = weekday + ", " + calendarDate;
   }
 #endif
   lastMine = m;
@@ -1192,6 +1199,14 @@ void esp32_2432S028R_MarketScreen(unsigned long mElapsed)
   MarketV m;
   m.hdr = liveHeader(data.currentTime);
   m.price = fmtPrice(data.btcPrice);
+#ifdef CYD_THEME_ROOM
+  if(roomActive()) {
+    const MinerStatus status=getMinerStatus();
+    char best[24];snprintf(best,sizeof(best),"%.4g",getBestDiff());
+    m.best=best; m.shares=String(status.accepted);
+    m.poolLinked=WiFi.status()==WL_CONNECTED && status.subscribed && status.authorized==1;
+  }
+#endif
   m.block = commas(data.blockHeight);
   m.fee = data.halfHourFee.startsWith("0 ") ? String("--") : data.halfHourFee;
   m.diff = data.netwrokDifficulty.length() ? data.netwrokDifficulty : String("--");
@@ -1422,17 +1437,14 @@ static void touchTask(void *)
           pendingTouch = TA_BACKLIGHT; // top-right: backlight on/off
 #ifdef CYD_THEME_ROOM
         else if (currentDisplayDriver->current_cyclic_screen == 3 &&
-                 t_x >= 12 && t_x < 308 && t_y >= 45 && t_y < 181)
+                 t_x >= 22 && t_x < 298 && t_y >= 47 && t_y < 195)
         {
           // Must match room theme-card geometry; gaps do not select a card.
-          const int col = (t_x - 12) / 152;
-          const int row = (t_y - 45) / 72;
-          if ((t_x - 12) % 152 < 144 && (t_y - 45) % 72 < 64)
+          const int col = (t_x - 22) / 142;
+          const int row = (t_y - 47) / 78;
+          if ((t_x - 22) % 142 < 134 && (t_y - 47) % 78 < 70)
             pendingTouch = TA_ROOM_GOKU + row * 2 + col;
         }
-        else if (currentDisplayDriver->current_cyclic_screen == 3 &&
-                 t_x >= 12 && t_x < 308 && t_y >= 190 && t_y < 218)
-          pendingTouch = TA_ROOM_PULSE;
 #endif
         else if (t_y < HDR_H + 4 && t_x < 110)
           pendingTouch = TA_ACCENT; // wordmark: next accent colour

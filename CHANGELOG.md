@@ -2,6 +2,26 @@
 
 [Volver al README](README.md)
 
+## V1.6.8 · 13 de noviembre de 2026
+
+- El firmware toma la web como referencia: la demo no se ha simplificado ni
+  modificado para adaptarla a la placa.
+- Rehecha la composición de Paisaje, Reloj, Bitcoin, Minería y Temas con sus
+  posiciones y tamaños de texto, colores, velos y paneles translúcidos.
+- Fuentes sans-serif suavizadas en los tamaños CSS, guardadas en flash; día y
+  fecha en español, unidades pequeñas y miniaturas con el recorte de la web.
+- Animación trasladada desde `web/animation.js`: agua, movimiento de brazos,
+  auras, chispas, fuego y pétalos con las mismas coordenadas, tiempos y colores.
+- El fondo del selector también se anima. Se elimina la zona táctil oculta que
+  activaba Pulse; una preferencia antigua de ese tema vuelve a Goku.
+- Notificación de share con los textos y duración de tres segundos de la demo.
+- Comparación automática entre los dos códigos: 20 muestras de los cuatro
+  personajes y más de 8.000 valores de posición, color y tiempo.
+- Conservadas las pruebas de navegación, protección de los textos, falta de
+  memoria, repintado limpio y versiones estáticas.
+- Pendiente comprobar en la placa los colores físicos, fluidez y hashrate;
+  la rasterización LCD/RGB565 y la cadencia difieren del navegador.
+
 ## V1.6.7 · 13 de noviembre de 2026
 
 - Pétalos más visibles en la demo y el firmware: 28 en vez de 20, mayor tamaño

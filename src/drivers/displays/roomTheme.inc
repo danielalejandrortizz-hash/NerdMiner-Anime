@@ -9,11 +9,65 @@ static bool roomShareVisible = false;
 static uint32_t roomLastShareEvent = 0;
 static bool roomShareKnown = false;
 
+static uint16_t roomRawPixel(int x, int y)
+{
+  if (x < 0) x = 0;
+  if (x >= SCR_W) x = SCR_W - 1;
+  if (y < 0) y = 0;
+  if (y >= SCR_H) y = SCR_H - 1;
+  return pgm_read_word(ROOM_IMAGES[roomTheme < 4 ? roomTheme : 0] + y * SCR_W + x);
+}
+
+static bool roomRoundedBox(int x, int y, int bx, int by, int width, int height, int radius)
+{
+  if (x < bx || x >= bx + width || y < by || y >= by + height) return false;
+  const int dx = x < bx + radius ? bx + radius - x : x >= bx + width - radius ? x - (bx + width - radius - 1) : 0;
+  const int dy = y < by + radius ? by + radius - y : y >= by + height - radius ? y - (by + height - radius - 1) : 0;
+  return dx*dx + dy*dy <= radius*radius;
+}
+
+static uint16_t roomBlurredPixel(int x,int y,int step)
+{
+  int red=0,green=0,blue=0;
+  const int weight[3]={1,2,1};
+  for(int yy=-1;yy<=1;++yy)for(int xx=-1;xx<=1;++xx) {
+    const uint16_t c=roomRawPixel(x+xx*step,y+yy*step);
+    const int w=weight[xx+1]*weight[yy+1];
+    red+=((c>>11)&31)*w;green+=((c>>5)&63)*w;blue+=(c&31)*w;
+  }
+  return uint16_t(((red/16)<<11)|((green/16)<<5)|(blue/16));
+}
+
 static uint16_t roomPixel(int x, int y)
 {
-  uint16_t c = pgm_read_word(ROOM_IMAGES[roomTheme < 4 ? roomTheme : 0] + y * SCR_W + x);
-  // Dim only the clock scene, to keep the centered digits legible.
-  return (uiScreen == SCR_CLOCK || uiScreen == 5) ? mix565(c, RGB565(15, 20, 37), 95) : c;
+  uint16_t c = uiScreen==3 ? roomBlurredPixel(x,y,3) :
+    uiScreen==4 && roomRoundedBox(x,y,37,35,246,175,7) ? roomBlurredPixel(x,y,7) : roomRawPixel(x,y);
+  // Port of web/room.css .scene-shade, in the original 320 x 240 CSS pixels.
+  if (uiScreen == SCR_CLOCK) {
+    c = mix565(c, RGB565(32 - 10*y/239, 36 - 6*y/239, 57 - 2*y/239), 74 + 41*y/239);
+  } else if (uiScreen == SCR_MARKET) {
+    c = mix565(c, RGB565(20,28,44), x < 256 ? 112 * (256-x) / 256 : 0);
+  } else if (uiScreen == 3 || uiScreen == 4) {
+    c = mix565(c, uiScreen == 3 ? RGB565(18,28,40) : RGB565(20,28,44), uiScreen == 3 ? 173 : 153);
+  } else {
+    if (y < 108) c = mix565(c, RGB565(17,21,42), 48 * (108-y) / 108);
+    if (y > 172) c = mix565(c, RGB565(18,27,29), 107 * (y-172) / 67);
+  }
+  // The translucent sheets belong to the web composition, not opaque cards.
+  if (uiScreen == SCR_MARKET && roomRoundedBox(x,y,16,14,150,155,7)) {
+    const bool edge = !roomRoundedBox(x,y,17,15,148,153,6);
+    c = mix565(c, edge ? RGB565(246,233,221) : RGB565(27,35,51), edge ? 24 : 38);
+    if (y == 80 && x >= 25 && x < 157) c = mix565(c, RGB565(230,217,200), 28);
+  }
+  if (uiScreen == 4 && roomRoundedBox(x,y,37,35,246,175,7)) {
+    const bool edge = !roomRoundedBox(x,y,38,36,244,173,6);
+    c = mix565(c, edge ? RGB565(246,233,221) : RGB565(27,35,51), edge ? 34 : 77);
+  }
+  if(roomShareVisible && uiScreen==SCR_MINE && roomRoundedBox(x,y,14,194,132,33,5)) {
+    const bool edge=!roomRoundedBox(x,y,15,195,130,31,4);
+    c=mix565(c,edge?RGB565(190,201,161):RGB565(36,49,33),edge?77:230);
+  }
+  return c;
 }
 
 static void roomPushRow(int x, int y, int width, uint16_t *pixels)
@@ -44,6 +98,8 @@ static void roomRestore(int x, int y, int width, int height)
   }
 }
 
+#include "roomWebText.inc"
+
 static bool roomBegin(int x, int y, int width, int height)
 {
   if (!wBegin(width, height, C_BG))
@@ -73,31 +129,6 @@ static void roomText(TFT_eSPI &d, const String &value, int x, int y, uint16_t co
   d.drawString(value, x + 1, y + 1);
   d.setTextColor(color);
   d.drawString(value, x, y);
-}
-
-static void roomFreeText(TFT_eSPI &d, const String &value, int x, int y, const GFXfont *font)
-{
-  d.setFreeFont(font);
-  d.setTextSize(1);
-  d.setTextDatum(MC_DATUM);
-  d.setTextColor(RGB565(42, 34, 52));
-  d.drawString(value, x + 1, y + 1);
-  d.setTextColor(ROOM_TEXT);
-  d.drawString(value, x, y);
-  d.setFreeFont(NULL);
-  d.setTextDatum(TL_DATUM);
-}
-
-static void roomTiny(TFT_eSPI &d, const char *value, int x, int y)
-{
-  d.setFreeFont(&TomThumb);
-  d.setTextSize(1);
-  d.setTextDatum(TL_DATUM);
-  d.setTextColor(RGB565(39, 35, 46));
-  d.drawString(value, x + 1, y + 1);
-  d.setTextColor(ROOM_DIM);
-  d.drawString(value, x, y);
-  d.setFreeFont(NULL);
 }
 
 // Reject non-numeric startup/disconnected values before painting statistics.
@@ -137,65 +168,44 @@ static String roomCount(const String &value)
   return String(b);
 }
 
-static void roomMetric(int id, int x, int y, const char *label, const String &value)
+static void roomMetric(int id, int x, int y, const char *label, const String &value, const String &unit = "", const RoomWebFont &unitFont = roomFont4)
 {
-  String key = value + "|" + String(roomTheme);
-  if (!need(id, key) || !roomBegin(x, y, 70, 34))
-    return;
-  roomTiny(wgt, label, 0, 0);
-  // Long counters remain inside their own clear area on the left.
-  wgt.setTextFont(2);
-  uint8_t font = wgt.textWidth(value) <= 66 ? 2 : 1;
-  roomText(wgt, value, 0, 12, ROOM_TEXT, font);
-  wEnd(x, y);
-  done(id, key);
+  const String key = String(label) + "|" + value + unit;
+  if (!need(id,key)) return;
+  roomWebText(x,y,65,7,label,roomFont4,RGB565(227,222,205),0,0,175);
+  roomWebText(x,y+9,65,14,value,roomFont10,RGB565(255,240,220));
+  const int valueWidth=roomWebWidth(value,roomFont10)+3;
+  if(unit.length() && valueWidth<65)
+    roomWebText(x+valueWidth,y+9+roomFont10.baseline-unitFont.baseline,65-valueWidth,unitFont.size+3,unit,unitFont,RGB565(241,228,201),0,0,176);
+  done(id,key);
 }
 
 static void roomPaintMine(const MineV &m)
 {
-  String key = m.hdr.time + "|" + String(roomTheme);
-  if (need(W_HERO, key) && roomBegin(14, 9, 116, 43))
-  {
-    roomFreeText(wgt, m.hdr.time, 56, 22, &FreeSans18pt7b);
-    wEnd(14, 9);
-    done(W_HERO, key);
-  }
-  key = m.date;
-  if (need(W_DATE, key) && roomBegin(16, 56, 146, 13))
-  {
-    roomText(wgt, m.date, 0, 1, ROOM_DIM);
-    wEnd(16, 56);
-    done(W_DATE, key);
-  }
-  roomMetric(W_T0, 16, 81, "HASHRATE KH/s", WiFi.status() == WL_CONNECTED ? roomRate(m.hash) : String("--"));
-  roomMetric(W_T1, 91, 81, "BEST DIFF", m.best);
-  roomMetric(W_T2, 16, 124, "WORKERS / POOL", WiFi.status() == WL_CONNECTED ? m.workers : String("--"));
-  roomMetric(W_T3, 91, 124, "SHARES OK / KO", roomCount(m.accepted) + "/" + roomCount(m.rejected));
-
-  const char *status = m.hdr.status == NM_waitingConfig ? "CONFIGURAR" :
-                       WiFi.status() != WL_CONNECTED ? "SIN RED" :
-                       !m.poolLinked ? "CONECTANDO" : "MINANDO";
-  key = String(status) + "|" + m.strip.v[3];
-  if (need(W_HDR, key) && roomBegin(216, 12, 96, 31))
-  {
-    roomTiny(wgt, status, 2, 0);
-    roomText(wgt, m.strip.v[3], 2, 13, ROOM_DIM);
-    wEnd(216, 12);
-    done(W_HDR, key);
+  roomWebField(W_HERO,17,15,125,39,m.hdr.time,roomFont34,RGB565(255,240,221),0,-2);
+  roomWebField(W_DATE,17,57,146,9,m.date,roomFont5,RGB565(255,240,223),0,0,209);
+  const bool online = WiFi.status() == WL_CONNECTED;
+  roomMetric(W_T0,17,82,"HASHRATE",online ? roomRate(m.hash) : String("--"),"KH/s");
+  roomMetric(W_T1,87,82,"BEST DIFF",m.best);
+  roomMetric(W_T2,17,114,"WORKERS / POOL",online ? m.workers : String("--"),"activos");
+  roomMetric(W_T3,87,114,"SHARES / OK / KO",roomCount(m.accepted),"/ "+roomCount(m.rejected),roomFont8);
+  const char *status = m.hdr.status == NM_waitingConfig ? "Configurar" :
+                       !online ? "Sin conexión" : !m.poolLinked ? "Conectando" : "Minando";
+  const String key = String(status) + "|" + m.strip.v[3];
+  if (need(W_HDR,key)) {
+    roomWebText(210,19,94,8,status,roomFont5,RGB565(255,241,223),2,0,220);
+    roomWebText(210,30,94,8,m.strip.v[3]+" encendido",roomFont5,RGB565(255,240,223),2,0,196);
+    done(W_HDR,key);
   }
   const uint32_t events = g_shareFoundEvents;
-  if (roomShareKnown && events > roomLastShareEvent)
-  {
-    roomShareAt = millis();
-    roomShareVisible = true;
-    if (roomBegin(14, 198, 144, 19))
-    {
-      roomTiny(wgt, "SHARE >= 1 ACEPTADA", 0, 3);
-      wEnd(14, 198);
-    }
+  if (roomShareKnown && events > roomLastShareEvent) {
+    roomShareAt = millis(); roomShareVisible = true;
+    roomRestore(14,194,132,33);
+    // Same short, calm notification as the web; this is a share, not a block.
+    roomWebText(24,199,122,10,"Una share más.",roomFont6,RGB565(244,237,206));
+    roomWebText(24,212,122,7,"La aventura continúa.",roomFont4,RGB565(181,196,164));
   }
-  roomLastShareEvent = events;
-  roomShareKnown = true;
+  roomLastShareEvent = events; roomShareKnown = true;
 }
 
 // Large readouts are composited directly into a single scanline. They never
@@ -252,145 +262,80 @@ static void roomNumber(int x, int y, int width, int height,
   }
 }
 
-static void roomClockPart(int id, int x, int width, const String &value)
-{
-  if (!need(id, value)) return;
-  roomNumber(x, 88, width, 64, value, &FreeSans24pt7b);
-  done(id, value);
-}
-
 static void roomPaintClock(const ClockV &c)
 {
-  String credit = "Dani | codex";
-  if (need(W_HDR, credit) && roomBegin(35, 159, 250, 15)) {
-    const String message = "disenado por Dani con ayuda de codex";
-    roomText(wgt, message, 125, 4, ROOM_DIM, 1, TC_DATUM);
-    // Add the tilde to the n explicitly: the built-in font is ASCII/CP437.
-    int nx = 125 - wgt.textWidth(message) / 2 + 4 * 6;
-    wgt.drawPixel(nx + 1, 2, ROOM_DIM);
-    wgt.drawPixel(nx + 2, 1, ROOM_DIM);
-    wgt.drawPixel(nx + 3, 2, ROOM_DIM);
-    wgt.drawPixel(nx + 4, 1, ROOM_DIM);
-    wEnd(35, 159); done(W_HDR, credit);
-  }
-  // Symmetric geometry: 72 + 26 + 72 = 170px, centered on x=160, y=120.
-  roomClockPart(W_HH, 75, 72, c.hh);
-  roomClockPart(W_COLON, 147, 26, ":");
-  roomClockPart(W_MM, 173, 72, c.mm);
-  if (need(W_DATE, c.date) && roomBegin(42, 68, 236, 16))
-  {
-    roomText(wgt, c.date, 118, 3, ROOM_DIM, 1, TC_DATUM);
-    wEnd(42, 68);
-    done(W_DATE, c.date);
-  }
+  static const char *lower[]={"domingo","lunes","martes","miércoles","jueves","viernes","sábado"};
+  static const char *upper[]={"DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"};
+  String weekday=c.weekday;
+  for(int i=0;i<7;++i)if(weekday==lower[i]){weekday=upper[i];break;}
+  roomWebField(W_HDR,42,66,236,9,weekday,roomFont6,RGB565(255,240,225),1,2,214);
+  roomWebField(W_HH,78,81,72,62,c.hh,roomFont62,RGB565(255,241,227),1,-3);
+  roomWebField(W_COLON,153,86,14,46,":",roomFont46,RGB565(255,241,227),1);
+  roomWebField(W_MM,170,81,72,62,c.mm,roomFont62,RGB565(255,241,227),1,-3);
+  roomWebField(W_DATE,42,152,236,10,c.date,roomFont6,RGB565(255,240,225),1,0,214);
+  roomWebField(W_T0,35,169,250,9,"diseñado por Dani con ayuda de codex",roomFont5,RGB565(255,240,225),1,0,201);
+  roomWebField(W_T1,42,221,236,7,"El mundo sigue. Tú, a tu ritmo.",roomFont4,RGB565(247,232,215),1,0,184);
+}
+
+static uint16_t roomThemeCardPixel(int x,int y)
+{
+  const int col=(x-22)/142,row=(y-47)/78;
+  const int i=row*2+col,bx=22+col*142,by=47+row*78;
+  if(i<0 || i>=4 || !roomRoundedBox(x,y,bx,by,134,70,4))return roomPixel(x,y);
+  const int dx=x-bx,dy=y-by,sx=dx*320/134,sy=36+dy*320/134;
+  uint16_t c=pgm_read_word(ROOM_IMAGES[i]+sy*320+sx);
+  c=mix565(RGB565(34,44,53),c,184);
+  if(dy>45)c=mix565(c,RGB565(21,32,43),230*(dy-45)/24);
+  if(!roomRoundedBox(x,y,bx+1,by+1,132,68,3))
+    c=roomTheme==i?RGB565(237,212,169):mix565(c,RGB565(241,222,199),59);
+  return c;
 }
 
 static void roomChrome(int screen)
 {
-  roomShareVisible = false;
-  if (screen != 3)
-  {
-    roomRestore(0, 0, SCR_W, SCR_H);
-    return;
-  }
-  TFT_eSPI &d = out();
-  clearScreen(d);
-  roomText(d, "ELIGE TU UNIVERSO", 12, 15, ROOM_TEXT);
-  for (int i = 0; i < 4; ++i)
-  {
-    int x = 12 + (i % 2) * 152, y = 45 + (i / 2) * 72;
-    uint16_t line[144];
-    for (int row = 0; row < 64; ++row)
-    {
-      for (int col = 0; col < 144; ++col)
-      {
-        const int sx = col * 320 / 144, sy = 64 + row * 142 / 64;
-        line[col] = pgm_read_word(ROOM_IMAGES[i] + sy * SCR_W + sx);
-        if (row > 43)
-          line[col] = mix565(line[col], C_BG, 120);
-      }
-      roomPushRow(x, y + row, 144, line);
+  roomShareVisible=false;roomRestore(0,0,SCR_W,SCR_H);
+  if(screen!=3)return;
+  roomWebText(22,28,276,9,"TU PEQUEÑO UNIVERSO",roomFont5,RGB565(232,220,201),1,1,179);
+  static const char *names[]={"Goku","Super Saiyan","Pikachu","Charmander"};
+  for(int i=0;i<4;++i) {
+    const int x=22+(i%2)*142,y=47+(i/2)*78;
+    uint16_t row[134];
+    for(int dy=0;dy<70;++dy) {
+      for(int dx=0;dx<134;++dx)row[dx]=roomThemeCardPixel(x+dx,y+dy);
+      roomPushRow(x,y+dy,134,row);
     }
-    roomText(d, ROOM_NAMES[i], x + 6, y + 49, ROOM_TEXT);
-    if (roomTheme == i)
-      d.drawRect(x, y, 144, 64, ROOM_TEXT);
+    roomWebText(x+6,y+57,122,9,names[i],roomFont5,RGB565(242,232,216),0,0,255,roomThemeCardPixel);
   }
-  roomTiny(d, "LADOS: CAMBIAR PAGINA   ARRIBA DERECHA: LUZ", 12, 228);
 }
 
 // Animation is generated from the flash image, one row at a time. No video
 // decoder, extra image frames, full-screen framebuffer or heap allocation.
 
 #ifndef CYD_ROOM_STATIC
-// Positions use 1/256-pixel units, so edge coverage changes smoothly between
-// LCD pixels. Compute trajectories once per frame, never inside the pixel loop.
-static const int ROOM_PETAL_COUNT = 28;
-struct RoomPetal { int32_t x, y; uint8_t rx, ry; };
-
-static void roomPetalPositions(unsigned long now, RoomPetal *petals)
-{
-  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
-    petals[i].x = int32_t((i * 37 * 256ULL + uint64_t(now) * 256 / (110 - (i % 3) * 10)) % (370 * 256)) - 25 * 256;
-    petals[i].y = int32_t((i * 29 * 256ULL + uint64_t(now) * 256 / (180 + (i % 2) * 30)) % (256 * 256)) - 8 * 256;
-    petals[i].rx = 3 + (i % 3 == 0);
-    petals[i].ry = 1 + (i % 2);
-  }
-}
-
-static void roomPetalDirty(uint8_t *dirty, int x0, int y, int width, const RoomPetal *petals)
-{
-  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
-    const RoomPetal &p = petals[i];
-    if (abs(y * 256 - p.y) > p.ry * 256) continue;
-    int left = p.x / 256 - p.rx - 1 - x0;
-    int right = p.x / 256 + p.rx + 1 - x0;
-    if (left < 0) left = 0;
-    if (right >= width) right = width - 1;
-    for (int x = left; x <= right; ++x) dirty[x] = 1;
-  }
-}
-
-static void roomPetalsOnRow(uint16_t *row, const uint8_t *dirty, int x0, int y,
-                            int width, const RoomPetal *petals)
-{
-  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) {
-    const RoomPetal &p = petals[i];
-    const int dy = y * 256 - p.y;
-    if (abs(dy) > p.ry * 256) continue;
-    const int radius = p.rx * p.rx * p.ry * p.ry * 65536;
-    const uint16_t color = i % 2 ? RGB565(255,208,233) : RGB565(255,240,188);
-    int left = p.x / 256 - p.rx - 1 - x0;
-    int right = p.x / 256 + p.rx + 1 - x0;
-    if (left < 0) left = 0;
-    if (right >= width) right = width - 1;
-    for (int x = left; x <= right; ++x) {
-      if (!dirty[x]) continue;
-      const int dx = (x + x0) * 256 - p.x;
-      const int distance = dx * dx * p.ry * p.ry + dy * dy * p.rx * p.rx;
-      if (distance >= radius) continue;
-      const int coverage = (radius - distance) * 255 / (radius / 2);
-      row[x] = mix565(row[x], color, coverage > 255 ? 255 : coverage);
-    }
-  }
-}
+#include "roomWebMotion.inc"
 
 static bool roomAnimationProtected(int x, int y)
 {
   if (uiScreen == SCR_MINE)
-    return (x < 166 && y < 161) || (x >= 216 && y < 43) ||
-           (roomShareVisible && x >= 14 && x < 158 && y >= 198 && y < 217);
-  if (uiScreen == SCR_MARKET)
-    return x >= 12 && x < 206 && y < 227;
+    return (x>=17 && x<163 && y>=15 && y<66) ||
+           (x>=17 && x<152 && y>=82 && y<138) ||
+           (x>=210 && x<304 && y>=19 && y<38) ||
+           (roomShareVisible && x>=14 && x<146 && y>=194 && y<227);
+  if (uiScreen == SCR_MARKET) return roomRoundedBox(x,y,16,14,150,155,7);
   if (uiScreen == SCR_CLOCK)
-    return (x >= 42 && x < 278 && y >= 68 && y < 84) ||
-           (x >= 75 && x < 245 && y >= 88 && y < 152) ||
-           (x >= 35 && x < 285 && y >= 159 && y < 174);
-  if (uiScreen == 4)
-    return x >= 12 && (x < 206 || y >= 196);
+    return (x>=42 && x<278 && y>=66 && y<76) ||
+           (x>=78 && x<242 && y>=81 && y<144) ||
+           (x>=35 && x<285 && y>=152 && y<178) ||
+           (x>=42 && x<278 && y>=221 && y<228);
+  if (uiScreen == 3) {
+    if(x>=22 && x<298 && y>=28 && y<37)return true;
+    for(int i=0;i<4;++i)
+      if(roomRoundedBox(x,y,22+(i%2)*142,47+(i/2)*78,134,70,4))return true;
+    return false;
+  }
+  if (uiScreen == 4) return roomRoundedBox(x,y,37,35,246,175,7);
   if (uiScreen == 5)
-    return (y >= 40 && y < 60) ||
-           (y >= 87 && y < 174 && x >= 12 && x < 308) ||
-           (y >= 186);
+    return (y>=40 && y<60) || (y>=87 && y<174 && x>=12 && x<308) || y>=186;
   return true;
 }
 
@@ -399,151 +344,49 @@ static bool roomAnimationProtected(int x, int y)
 static void roomAnimate(unsigned long frame)
 {
   (void)frame;
-  if (!roomActive() || uiScreen < 0 || uiScreen > 5 || uiScreen == 3)
+  if (!roomActive() || uiScreen < 0 || uiScreen > 5)
     return;
   const unsigned long now = millis();
-  if (roomShareVisible && (unsigned long)(now - roomShareAt) >= 1800)
+  if (roomShareVisible && (unsigned long)(now - roomShareAt) >= 3000)
   {
-    roomRestore(14, 198, 144, 19);
     roomShareVisible = false;
+    roomRestore(14,194,132,33);
   }
   // Static builds still expire share notifications but perform no scene redraws.
 #ifndef CYD_ROOM_STATIC
-  static unsigned long last = 0;
-  static int lastTheme = -1, lastScreen = -1, lastPhase = -1;
-  static RoomPetal previousPetals[ROOM_PETAL_COUNT];
-  static bool havePreviousPetals = false;
-  if (lastTheme == roomTheme && lastScreen == uiScreen &&
-      (unsigned long)(now - last) < 62)
-    return;
-  const unsigned phase = (now / 125) % 32;
-  const bool sceneChanged = lastTheme != roomTheme || lastScreen != uiScreen || lastPhase != int(phase);
-  last = now; lastTheme = roomTheme; lastScreen = uiScreen; lastPhase = phase;
-  RoomPetal petals[ROOM_PETAL_COUNT];
-  roomPetalPositions(now, petals);
-  static const int8_t wave[32] = {0,3,6,9,11,13,15,16,16,16,15,13,11,9,6,3,
-                                0,-3,-6,-9,-11,-13,-15,-16,-16,-16,-15,-13,-11,-9,-6,-3};
-  const bool goku = roomTheme < 2;
-  const uint16_t energy = roomTheme == 0 ? RGB565(140,220,255) :
-                          roomTheme == 1 ? RGB565(255,213,72) :
-                          roomTheme == 2 ? RGB565(255,244,120) : RGB565(255,159,45);
-  struct Mote { int x, y; } motes[12];
-  for (int i = 0; i < 12; ++i)
-  {
-    const int age = (phase + i * 7) % 32;
-    if (goku)
-    {
-      // Crystal impact sparks for both Gokus; a rising aura for Super Saiyan.
-      if (roomTheme == 1 && i < 6)
-        motes[i] = {190 + (i % 2) * 42 + wave[(age + i) % 32] / 3, 210 - age * 2};
-      else
-        motes[i] = {249 - age * (1 + i % 3) / 4, 183 - age + age * age / 40 + i % 4};
+  static unsigned long last=0;
+  static int lastTheme=-1,lastScreen=-1;
+  static RoomWebFrame current,previous;
+  static bool havePrevious=false;
+  if(lastTheme==roomTheme && lastScreen==uiScreen && (unsigned long)(now-last)<62)return;
+  last=now;lastTheme=roomTheme;lastScreen=uiScreen;
+  roomBuildWebFrame(current,now/1000.0f,roomTheme);
+  uint16_t row[SCR_W];
+  for(int y=0;y<SCR_H;++y) {
+    uint8_t dirty[SCR_W]={};
+    roomWebDirty(dirty,y,current);
+    if(havePrevious)roomWebDirty(dirty,y,previous);
+    for(int x=0;x<SCR_W;++x) {
+      if(roomAnimationProtected(x,y))dirty[x]=0;
+      if(dirty[x])row[x]=roomWebBase(x,y,current);
     }
-    else if (roomTheme == 2)
-      motes[i] = {257 + wave[(phase + i * 3) % 32], 177 + wave[(phase + i * 3 + 8) % 32] / 2};
-    else
-      motes[i] = {286 + wave[(age + i) % 32] / 4, 176 - age};
-  }
-  // Restore every animated pixel from flash before drawing the next pose/effect.
-  // Regions stay clear of UI widgets; protected spans are never sent to the LCD.
-  uint16_t row[140];
-  for (int y = 118; y < 219; ++y)
-  {
-    uint8_t dirty[140] = {};
-    if (sceneChanged) for (int dx = 0; dx < 140; ++dx) dirty[dx] = 1;
-    if (havePreviousPetals) roomPetalDirty(dirty, 174, y, 140, previousPetals);
-    roomPetalDirty(dirty, 174, y, 140, petals);
-    for (int dx = 0; dx < 140; ++dx)
-    {
-      if (!dirty[dx]) continue;
-      const int x = 174 + dx;
-      int sy = y;
-      if (goku && x >= 177 && x < 250 && y >= 145 && y < 214)
-      {
-        // Taper the demo's breathing/mining stroke to zero at every edge.
-        const int taperX = wave[(x - 177) * 16 / 73];
-        const int taperY = wave[(y - 145) * 16 / 69];
-        const int strike = wave[(phase * 2) % 32];
-        const int arm = y >= 165 && y < 190 && strike > 0 ? strike : 0;
-        sy -= (wave[phase] + arm * 2) * taperX * taperY / 4096;
-      }
-      else if (!goku && x > 236 && x < 277 && y > 155 && y < 205)
-        sy += wave[phase] / 16; // gentle breathing, one pixel each way
-      uint16_t color = roomPixel(x, sy);
-      int glowX = roomTheme == 0 ? 223 : roomTheme == 1 ? 213 : roomTheme == 2 ? 260 : 286;
-      int glowY = roomTheme == 0 ? 179 : roomTheme == 1 ? 141 : roomTheme == 2 ? 181 : 174;
-      const int radius = roomTheme == 1 ? 21 : roomTheme == 3 ? 13 : 11;
-      const int distance = (x-glowX)*(x-glowX) + (y-glowY)*(y-glowY);
-      if (distance < radius*radius)
-      {
-        const int strength = 50 + (wave[(phase * (roomTheme == 3 ? 3 : 1)) % 32] + 16) * 2;
-        color = mix565(color, energy, strength * (radius*radius-distance) / (radius*radius));
-      }
-      for (int i = 0; i < 12; ++i)
-      {
-        const int mx = x - motes[i].x, my = y - motes[i].y;
-        if (mx*mx + my*my <= (i % 3 == 0 ? 2 : 1))
-          color = mix565(color, energy, 190);
-      }
-      // Pikachu's short lightning arcs change with the animation phase.
-      if (roomTheme == 2 && phase % 12 < 4 && x >= 278 && x <= 287 &&
-          y == 169 + (x-278)/2 + ((x + int(phase)) % 3))
-        color = energy;
-      row[dx] = color;
+    for(int i=0;i<current.nc;++i) {
+      const RoomWebCommand &c=current.commands[i];
+      if(c.kind==0)roomWebCompositeGlow(row,dirty,y,current.glows[c.index]);
+      else roomWebCompositeRect(row,dirty,y,current.rects[c.index]);
     }
-    roomPetalsOnRow(row, dirty, 174, y, 140, petals);
-    int start = 0;
-    while (start < 140)
-    {
-      while (start < 140 && (!dirty[start] || roomAnimationProtected(174 + start, y))) ++start;
-      int end = start;
-      while (end < 140 && dirty[end] && !roomAnimationProtected(174 + end, y)) ++end;
-      if (end > start) roomPushRow(174 + start, y, end-start, row+start);
-      start = end;
+    roomWebCompositePetals(row,dirty,y,current);
+    roomWebCompositeLights(row,dirty,y,current);
+    int x=0;
+    while(x<SCR_W) {
+      while(x<SCR_W && !dirty[x])++x;
+      int end=x;while(end<SCR_W && dirty[end])++end;
+      if(end>x)roomPushRow(x,y,end-x,row+x);
+      x=end;
     }
   }
-  // The demo's lake polygon and drifting petals share one restored row pass.
-  // Every old petal is erased from flash; widgets are never overwritten.
-  uint16_t landscape[SCR_W];
-  for (int y = 30; y < 240; ++y)
-  {
-    uint8_t dirty[SCR_W] = {};
-    if (havePreviousPetals) roomPetalDirty(dirty, 0, y, SCR_W, previousPetals);
-    roomPetalDirty(dirty, 0, y, SCR_W, petals);
-    for (int x = 0; x < SCR_W; ++x)
-    {
-      int sx = x;
-      const bool water = y >= 165 && y < 214 &&
-        y >= 178 - x * 13 / 90 &&
-        (y < 191 ? x < 224 - (y - 165) * 38 / 26 :
-         y < 205 ? x < 186 - (y - 191) * 68 / 14 : x < 118 - (y - 205) * 118 / 9);
-      if (sceneChanged && water) dirty[x] = 1;
-      if ((x >= 174 && x < 314 && y >= 118 && y < 219) || roomAnimationProtected(x, y)) dirty[x] = 0;
-      if (!dirty[x]) continue;
-      if (water) sx += wave[(phase + y * 3) % 32] / 7;
-      if (sx < 0) sx = 0;
-      if (sx >= SCR_W) sx = SCR_W - 1;
-      uint16_t color = roomPixel(sx, y);
-      if (water && x > 103 - (y - 168) / 4 &&
-          x < 112 + (y - 168) / 2 && (y + phase) % 5 == 0)
-        color = mix565(color, RGB565(255,218,145), 65);
-      landscape[x] = color;
-    }
-    roomPetalsOnRow(landscape, dirty, 0, y, SCR_W, petals);
-    int start = 0;
-    while (start < SCR_W)
-    {
-      while (start < SCR_W && (!dirty[start] || roomAnimationProtected(start,y) ||
-             (start >= 174 && start < 314 && y >= 118 && y < 219))) ++start;
-      int end = start;
-      while (end < SCR_W && dirty[end] && !roomAnimationProtected(end,y) &&
-             !(end >= 174 && end < 314 && y >= 118 && y < 219)) ++end;
-      if (end > start) roomPushRow(start,y,end-start,landscape+start);
-      start = end;
-    }
-  }
-  for (int i = 0; i < ROOM_PETAL_COUNT; ++i) previousPetals[i] = petals[i];
-  havePreviousPetals = true;
+  previous=current;havePrevious=true;
+
 #endif
 }
 
@@ -580,43 +423,44 @@ static void roomPaintSetup(TFT_eSPI &d, const String &ap, const String &password
 }
 
 
-static void roomDataLine(int id, int y, const char *label, const String &value)
-{
-  String key = String(label) + value;
-  if (!need(id, key) || !roomBegin(12, y, 194, 25)) return;
-  roomTiny(wgt, label, 0, 0);
-  wgt.setTextFont(2);
-  const uint8_t font = wgt.textWidth(value) <= 190 ? 2 : 1;
-  roomText(wgt, value, 0, 9, ROOM_TEXT, font);
-  wEnd(12, y); done(id, key);
-}
-
 static void roomPaintMarket(const MarketV &m)
 {
-  roomDataLine(W_HDR, 12, "BITCOIN", m.hdr.time);
-  roomDataLine(W_HERO, 50, btcPairLabel().c_str(), m.price);
-  roomDataLine(W_T0, 91, "ULTIMO BLOQUE", m.block);
-  roomDataLine(W_T1, 128, "COMISION 30 MIN", m.fee);
-  roomDataLine(W_T2, 165, "DIFICULTAD DE RED", m.diff);
-  roomDataLine(W_T3, 202, "BLOQUES HASTA HALVING", m.remaining);
+  roomWebField(W_HDR,25,24,130,8,"BITCOIN",roomFont5,RGB565(232,220,201),0,1,179);
+  String price=m.price;
+  unsigned first=0;while(first<price.length() && (price[first]<'0' || price[first]>'9'))++first;
+  if(first>0 && first<price.length())price=price.substring(first)+" "+price.substring(0,first);
+  roomWebField(W_HERO,25,37,132,36,price,roomFont27,ROOM_TEXT,0,-1);
+  const char *labels[] = {"Mejor dificultad","Altura del bloque","Shares aceptadas"};
+  const String values[] = {m.best,m.block,m.shares};
+  for (int i=0;i<3;++i) {
+    const String key=values[i];
+    if (!need(W_T0+i,key)) continue;
+    roomWebText(25,96+i*14,79,9,labels[i],roomFont5,RGB565(219,216,201),0,0,173);
+    roomWebText(105,96+i*14,52,9,values[i],roomFont5,RGB565(242,232,213),2);
+    done(W_T0+i,key);
+  }
+  roomWebField(W_T3,25,145,132,8,m.poolLinked?"Conectado":"Sin conexión",roomFont4,RGB565(216,223,195),0,0,168);
 }
 
 static void roomPaintStats(const String &best, const String &target, const String &ratio,
                            const String &ok, const String &ko, const String &hash)
 {
-  roomDataLine(W_HDR, 8, "MEJOR INTENTO / RED (%)", ratio);
-  roomDataLine(W_T0, 45, "MEJOR DIFICULTAD", best);
-  roomDataLine(W_T1, 82, "OBJETIVO DE RED", target);
-  roomDataLine(W_T2, 119, "SHARES >=1 ACEPTADAS / RECHAZADAS", roomCount(ok) + "/" + roomCount(ko));
-  roomDataLine(W_T3, 156, "HASHRATE kH/s", roomRate(hash));
-  if (need(W_DATE, "note")) {
-    roomRestore(12, 196, 296, 35);
-    roomTiny(out(), "COMPARACION, NO PROGRESO ACUMULADO", 12, 201);
-    roomTiny(out(), "CADA HASH ES UN NUEVO INTENTO", 12, 216);
-    done(W_DATE, "note");
+  roomWebField(W_HDR,56,52,208,9,"TU MEJOR INTENTO",roomFont5,RGB565(232,220,201),0,1,179);
+  roomWebField(W_HERO,56,72,208,28,ratio,roomFont21,RGB565(255,240,221));
+  const char *labels[] = {"Mejor dificultad","Objetivo de red","Shares >=1 / OK / KO","Hashrate"};
+  const String values[] = {best,target,roomCount(ok)+" / "+roomCount(ko),roomRate(hash)+" KH/s"};
+  for(int i=0;i<4;++i) {
+    if(!need(W_T0+i,values[i])) continue;
+    roomWebText(56,111+i*14,120,9,labels[i],roomFont5,RGB565(219,216,201),0,0,173);
+    roomWebText(177,111+i*14,87,9,values[i],roomFont5,RGB565(242,232,213),2);
+    done(W_T0+i,values[i]);
+  }
+  if(need(W_DATE,"note")) {
+    roomWebText(56,175,208,9,"No es progreso acumulado.",roomFont5,RGB565(232,220,201));
+    roomWebText(56,185,208,9,"Cada hash es un nuevo intento.",roomFont5,RGB565(232,220,201));
+    done(W_DATE,"note");
   }
 }
-
 
 // Restore and draw the complete number without temporary heap allocations.
 static void roomPaintHashrate(const String &hash, const String &ip = "--")

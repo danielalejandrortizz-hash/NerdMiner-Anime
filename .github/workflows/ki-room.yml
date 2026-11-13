@@ -40,6 +40,7 @@ jobs:
         run: |
           python tools/check_room.py
           python tools/check_room_navigation.py
+          python tools/check_room_web.py
           python tools/check_hashrate.py
           node --check web/animation.js
           node --check web/scene-animation.js

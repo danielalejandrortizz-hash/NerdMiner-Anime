@@ -8,15 +8,15 @@ root = Path(__file__).resolve().parents[1]
 driver = (root / 'src/drivers/displays/esp23_2432s028r.cpp').read_text()
 
 
-def function(signature):
-    start = driver.index(signature + '\n{')
-    brace = driver.index('{', start)
+def function(signature, contents=driver):
+    start = contents.index(signature + '\n{')
+    brace = contents.index('{', start)
     depth = 1
     end = brace + 1
     while depth:
-        depth += (driver[end] == '{') - (driver[end] == '}')
+        depth += (contents[end] == '{') - (contents[end] == '}')
         end += 1
-    return driver[start:end]
+    return contents[start:end]
 
 
 source = r'''#include "Arduino.h"
@@ -25,7 +25,7 @@ source = r'''#include "Arduino.h"
 enum { SCR_MINE, SCR_MARKET, SCR_CLOCK };
 struct MineV {};
 struct MarketV {};
-struct ClockV { String hh, mm, date; };
+struct ClockV { String hh, mm, date, weekday; };
 static MineV lastMine;
 static MarketV lastMarket;
 static ClockV lastClock, painted;
@@ -45,8 +45,9 @@ static String fmtDate(const char *date){return String(date);}
 static bool getLocalClock(int &h,int &m,int &s,int &d,int &mo,int &y){
   h=hourValue;m=minuteValue;s=0;d=13;mo=11;y=2026;return synced;
 }
+static void roomDateParts(int,int,int,String &,String &);
 static void roomClockScreen();
-''' + function('static void repaintCached(int scr)') + '\n' + function('static void roomClockScreen()') + r'''
+''' + function('static void roomDateParts(int day, int month, int year, String &weekday, String &date)', (root/'src/drivers/displays/roomWebText.inc').read_text()) + '\n' + function('static void repaintCached(int scr)') + '\n' + function('static void roomClockScreen()') + r'''
 int main(){
   // First visit, before time sync: visible placeholders, no network API exists.
   repaintCached(SCR_CLOCK);
@@ -59,6 +60,7 @@ int main(){
     assert(uiScreen==SCR_CLOCK && painted.hh=="18");
     char mm[3];snprintf(mm,sizeof(mm),"%02d",minuteValue);
     assert(painted.mm==String(mm));
+    assert(painted.weekday=="viernes" && painted.date=="13 de noviembre");
   }
   assert(paints==101);
 }

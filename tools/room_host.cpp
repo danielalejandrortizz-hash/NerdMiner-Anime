@@ -98,9 +98,8 @@ static void done(int id,const String &key){keys[id]=key;}
 static void resetWidgets(){for(auto &key:keys)key=String("\1");}
 struct HdrV{String time;int status=NM_hashing;};
 struct MineV{HdrV hdr;String hash,best,accepted,rejected,workers,date;bool poolLinked=true;struct{String v[4];}strip;};
-struct ClockV{String hh,mm,date;};
-struct MarketV{HdrV hdr;String price,block,fee,diff,remaining;};
-static String btcPairLabel(){return String("BTC / EUR");}
+struct ClockV{String hh,mm,date;String weekday="jueves";};
+struct MarketV{HdrV hdr;String price,block,fee,diff,remaining;String best="0.0478",shares="24";bool poolLinked=true;};
 #include "drivers/displays/roomTheme.inc"
 static unsigned pulseChromeCalls=0;
 static void chromeMine(TFT_eSPI&){++pulseChromeCalls;}
@@ -132,13 +131,15 @@ int main(int argc,char **argv){
     }
   }
   roomTheme=0;
+  String dayName,dateText;roomDateParts(13,11,2026,dayName,dateText);
+  assert(dayName=="viernes" && dateText=="13 de noviembre");
   assert(roomRate("nan")=="--");assert(roomRate("inf")=="--");
   assert(roomRate("-1")=="--");assert(roomRate("990.0")=="990.0");
   assert(roomRate("0.01")=="0.01");assert(roomRate("junk")=="--");
   assert(roomComparison(0.0478,120e12)=="< 0.0001 %");
   assert(roomComparison(1,100)=="1.0000 %");
   assert(roomComparison(1,0)=="--");assert(roomComparison(0,100)=="--");
-  MineV m;m.hdr.time="18:42";m.hash="990.0";m.best="0.0478";m.accepted="24";m.rejected="0";m.workers="3";m.date="THU  12 NOV 2026";m.strip.v[3]="1d 04h";
+  MineV m;m.hdr.time="18:42";m.hash="990.0";m.best="0.0478";m.accepted="24";m.rejected="0";m.workers="3";m.date="jueves, 12 de noviembre";m.strip.v[3]="1d 04h";
   for(roomTheme=0;roomTheme<4;roomTheme++){
     uiScreen=-1;roomPaintWelcome(tft,"KI ROOM");save(path+"/loading-"+std::to_string(roomTheme)+".ppm");
     roomPaintSetup(tft,"NerdMinerAP","MineYourCoins");save(path+"/setup-"+std::to_string(roomTheme)+".ppm");
@@ -148,16 +149,16 @@ int main(int argc,char **argv){
     unsigned before=pushes;roomPaintMine(m);assert(pushes==before);
     save(path+"/mine-"+std::to_string(roomTheme)+".ppm");
     uiScreen=SCR_MARKET;resetWidgets();roomChrome(uiScreen);
-    MarketV market;market.hdr.time="18:42";market.price="75,000 EUR";market.block="900,000";market.fee="2 sat/vB";market.diff="120.00T";market.remaining="150000";
+    MarketV market;market.hdr.time="18:42";market.price="75.000 €";market.block="900,000";market.fee="2 sat/vB";market.diff="120.00T";market.remaining="150000";
     roomPaintMarket(market);save(path+"/market-"+std::to_string(roomTheme)+".ppm");
     before=pushes;roomPaintMarket(market);assert(pushes==before);
     uiScreen=4;resetWidgets();roomChrome(uiScreen);
-    roomPaintStats(m.best, "120.00T", "3.98e-14 %", "24", "0", "990.0");save(path+"/stats-"+std::to_string(roomTheme)+".ppm");
+    roomPaintStats(m.best, "120.00T", "< 0.0001 %", "24", "0", "990.0");save(path+"/stats-"+std::to_string(roomTheme)+".ppm");
     uiScreen=5;resetWidgets();roomChrome(uiScreen);
     roomPaintHashrate("990.0", "192.168.1.123");save(path+"/hashrate-"+std::to_string(roomTheme)+".ppm");
     before=pushes;roomPaintHashrate("990.0", "192.168.1.123");assert(pushes==before);
     for (const char *value : {"0.0", "1000.0", "12345.6", "--", "9.0"}) roomPaintHashrate(value);
-    uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
+    uiScreen=SCR_CLOCK;resetWidgets();roomChrome(uiScreen);ClockV c;c.hh="18";c.mm="42";c.date="12 de noviembre";roomPaintClock(c);save(path+"/clock-"+std::to_string(roomTheme)+".ppm");
   }
 #ifdef CYD_ROOM_STATIC
   // Static firmware must never repaint a decorative scene, across all pages.
@@ -178,16 +179,15 @@ int main(int argc,char **argv){
   // intact, updates are throttled, and menu/Pulse pages stay untouched.
   for (roomTheme=0; roomTheme<4; ++roomTheme) {
     for (uiScreen=0; uiScreen<=5; ++uiScreen) {
-      if (uiScreen==3) continue;
       resetWidgets();roomChrome(uiScreen);
       if (uiScreen==SCR_MINE) roomPaintMine(m);
       if (uiScreen==SCR_MARKET) {
-        MarketV market;market.hdr.time="18:42";market.price="75,000 EUR";
+        MarketV market;market.hdr.time="18:42";market.price="75.000 €";
         market.block="900,000";market.fee="2 sat/vB";market.diff="120T";market.remaining="150000";
         roomPaintMarket(market);
       }
-      if (uiScreen==SCR_CLOCK) {ClockV c;c.hh="18";c.mm="42";c.date=m.date;roomPaintClock(c);}
-      if (uiScreen==4) roomPaintStats(m.best,"120T","3.98e-14 %","24","0","990");
+      if (uiScreen==SCR_CLOCK) {ClockV c;c.hh="18";c.mm="42";c.date="12 de noviembre";roomPaintClock(c);}
+      if (uiScreen==4) roomPaintStats(m.best,"120T","< 0.0001 %","24","0","990");
       if (uiScreen==5) roomPaintHashrate("990.0", "192.168.1.123");
       auto staticPixels=tft.pixels;
       fakeMs+=1000;roomAnimate(1);auto pose=tft.pixels;
@@ -214,11 +214,17 @@ int main(int argc,char **argv){
         // no old petals, water or character fragments may remain behind.
         uiScreen=SCR_MARKET;resetWidgets();roomChrome(uiScreen);roomAnimate(0);
         uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);roomAnimate(0);
+        if(tft.pixels!=incremental) {
+          unsigned count=0;
+          for(int y=0;y<240;++y)for(int x=0;x<320;++x)
+            if(tft.pixels[y*320+x]!=incremental[y*320+x] && count++<16)
+              fprintf(stderr,"mismatch theme=%d ms=%lu x=%d y=%d fresh=%04x incremental=%04x protected=%d\n",roomTheme,fakeMs,x,y,tft.pixels[y*320+x],incremental[y*320+x],roomAnimationProtected(x,y));
+        }
         assert(tft.pixels==incremental);
         save(path+"/animated-"+std::to_string(roomTheme)+".ppm");
       }
     }
-    uiScreen=3;roomChrome(3);unsigned before=pushes;fakeMs+=1000;roomAnimate(1);assert(pushes==before);
+
   }
 #endif
   // Repeated navigation, shorter values and allocation failures must not
@@ -232,7 +238,7 @@ int main(int argc,char **argv){
       resetWidgets();roomChrome(5);roomPaintHashrate("9.0", "192.168.1.123");
       assert(tft.pixels==updated);
       uiScreen=SCR_CLOCK;resetWidgets();roomChrome(SCR_CLOCK);
-      ClockV clock;clock.hh="18";clock.mm="42";clock.date="FRI 13 NOV 2026";
+      ClockV clock;clock.hh="18";clock.mm="42";clock.date="13 de noviembre";
       roomPaintClock(clock);clock.hh="00";clock.mm="01";roomPaintClock(clock);
       const auto changedClock=tft.pixels;
       resetWidgets();roomChrome(SCR_CLOCK);roomPaintClock(clock);
@@ -248,19 +254,19 @@ int main(int argc,char **argv){
     unsigned ink=0;
     for(int y=87;y<147;++y)for(int x=12;x<308;++x) {
       assert(tft.pixels[y*320+x]==withoutHeap[y*320+x]);
-      if(tft.pixels[y*320+x]==ROOM_TEXT)++ink;
+      if(tft.pixels[y*320+x]!=roomPixel(x,y))++ink;
     }
     assert(ink>500);
     uiScreen=SCR_CLOCK;resetWidgets();roomChrome(SCR_CLOCK);
     failSpriteAlloc=true;
-    ClockV clock;clock.hh="18";clock.mm="42";clock.date="FRI 13 NOV 2026";
+    ClockV clock;clock.hh="18";clock.mm="42";clock.date="13 de noviembre";
     roomPaintClock(clock);withoutHeap=tft.pixels;
     failSpriteAlloc=false;
     resetWidgets();roomChrome(SCR_CLOCK);roomPaintClock(clock);
     ink=0;
     for(int y=88;y<152;++y)for(int x=75;x<245;++x) {
       assert(tft.pixels[y*320+x]==withoutHeap[y*320+x]);
-      if(tft.pixels[y*320+x]==ROOM_TEXT)++ink;
+      if(tft.pixels[y*320+x]!=roomPixel(x,y))++ink;
     }
     assert(ink>500);
     // The scanline compositor itself never asks for a sprite.
@@ -272,7 +278,7 @@ int main(int argc,char **argv){
   roomTheme=0;uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);
   roomShareKnown=false;g_shareFoundEvents=7;roomPaintMine(m);assert(!roomShareVisible);
   WiFi.state=0;m.workers="--";m.poolLinked=false;roomPaintMine(m);save(path+"/offline.ppm");
-  WiFi.state=WL_CONNECTED;g_shareFoundEvents=8;roomPaintMine(m);assert(roomShareVisible);fakeMs=2000;roomAnimate(5);assert(!roomShareVisible);
+  WiFi.state=WL_CONNECTED;g_shareFoundEvents=8;roomPaintMine(m);assert(roomShareVisible);fakeMs=roomShareAt+3000;roomAnimate(5);assert(!roomShareVisible);
   uiScreen=3;roomChrome(3);save(path+"/themes.ppm");
   assert(peakSprite<=10000);
   printf("OK: actual room renderer, four assets, scene/clock/menu, offline, caching, actual page routing, navigation, allocation failures, share expiry; peak widget %zu bytes. Hardware not tested.\n",peakSprite);
