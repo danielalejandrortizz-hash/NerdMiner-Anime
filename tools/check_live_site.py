@@ -28,6 +28,8 @@ for attempt in range(12):
         installer = read('instalar.html')
         assert 'id="animation-mode"' in installer, 'Firmware selector missing'
         assert 'app.js?v=' + version in installer, 'Installer script belongs to an older release'
+        assert 'installer-theme.css?v=' + version in installer, 'Installer theme missing'
+        assert '#17191b' in read('installer-theme.css'), 'Installer palette missing'
         build = json.loads(read('firmware/build.json'))
         assert build['version'] == version, 'Firmware belongs to an older release'
         for board in ('ESP32-2432S028R-Room', 'ESP32_2432S028_2USB-Room'):
