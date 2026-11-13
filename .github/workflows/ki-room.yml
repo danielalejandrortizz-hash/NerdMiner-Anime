@@ -31,8 +31,12 @@ jobs:
       - name: Check renderer and installer
         run: |
           python tools/check_room.py
+          python tools/check_hashrate.py
+          node --check web/animation.js
+          node --check web/scene-animation.js
+          node --check web/room.js
           node --check web/app.js
-          node --test tools/web_installer.test.cjs
+          node --test tools/web_installer.test.cjs tools/web_animation.test.cjs
           bash -n tools/compile_room.sh
       - uses: actions/cache@v4
         with:
