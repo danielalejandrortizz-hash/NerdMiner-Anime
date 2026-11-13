@@ -50,3 +50,20 @@ test('petals use larger shapes and continuous fractional motion between browser 
     assert.ok(dx>0&&dx<1,'16 ms of drift should move by a fraction of a pixel');
   }
 });
+
+test('petals start scattered across the whole display, without aligned rows or columns',()=>{
+  const app=animation(0);app.frame();
+  const points=app.positions;
+  const quadrants=[0,0,0,0];
+  for(const [x,y] of points){
+    assert.ok(x>=0&&x<320&&y>=0&&y<240);
+    quadrants[(x>=160?1:0)+(y>=120?2:0)]++;
+  }
+  assert.ok(quadrants.every(count=>count>=4),'each quadrant needs visible petals');
+  const bands=new Map();
+  for(const [,y]of points){const band=Math.floor(y/6);bands.set(band,(bands.get(band)||0)+1)}
+  assert.ok(Math.max(...bands.values())<=3,'no dense horizontal lines');
+  const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+  assert.ok(Math.max(...xs)-Math.min(...xs)>270);
+  assert.ok(Math.max(...ys)-Math.min(...ys)>190);
+});

@@ -9,7 +9,7 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
-**Versión V1.6.8** · [Historial de versiones y cambios](CHANGELOG.md)
+**Versión V1.6.9** · [Historial de versiones y cambios](CHANGELOG.md)
 
 ## Los cuatro paisajes de KI Room
 
@@ -162,9 +162,9 @@ CYD, los entornos Room y el instalador. Se mantienen la licencia y los créditos
 **Comprobado:**
 
 - Los cuatro entornos CYD Room (animados y estáticos, para uno y dos USB) compilan con el SDK de ESP32 en GitHub Actions.
-- Ocupan aproximadamente **2,47 MB de flash**, un **78,4 %** de la partición de
-  aplicación; la RAM estática es **58.536 bytes**, un **17,9 %**. Esto no mide
-  el consumo de heap durante el uso.
+- El consumo de flash y RAM de cada variante se muestra en los
+  [registros de compilación](https://github.com/danielalejandrortizz-hash/NerdMiner-Anime/actions).
+  Estas cifras no miden el consumo de heap durante el uso.
 - Las pruebas de escritorio del renderizador pasan con ASan/UBSan: escenas,
   reloj, menú, desconexión, caché, navegación repetida, fallos de reserva de memoria
   y expiración del aviso de share; la variante
@@ -408,7 +408,7 @@ Fill in **Backup pool URL**, port and (optionally) password to have the miner ca
 `http://<miner IP address>/api/status` returns the miner's state as JSON, for Home Assistant, Grafana or your own scripts. It needs no login and holds nothing the screen doesn't show (no wallet address, no passwords):
 
 ```json
-{"version":"V1.6.8","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
+{"version":"V1.6.9","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
  "total_mhashes":59113,"mining_time_s":60789,"templates":2108,"best_diff":5.26,"shares_32bit":9,
  "blocks_found":0,"shares_accepted":412,"shares_rejected":0,
  "pool":{"address":"btc.heliospool.com","port":3333,"backup":false,"subscribed":true,"difficulty":0.0007},

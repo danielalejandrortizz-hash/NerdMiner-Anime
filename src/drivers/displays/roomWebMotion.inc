@@ -19,6 +19,13 @@ static void roomWebRect(RoomWebFrame &f,float x,float y,float w,float h,uint16_t
 {
   f.rects[f.nr]={x,y,w,h,alpha,color};f.commands[f.nc++]={1,f.nr++};
 }
+static float roomPetalNoise(int i,uint32_t salt)
+{
+  uint32_t n=uint32_t(i+1)*1103515245u+salt;
+  n=(n^(n>>16))*2246822519u;
+  n=(n^(n>>13))*3266489917u;
+  return (n^(n>>16))/4294967296.0f;
+}
 static void roomBuildWebFrame(RoomWebFrame &f,float t,int theme)
 {
   const float pi=3.14159265358979323846f;
@@ -72,9 +79,13 @@ static void roomBuildWebFrame(RoomWebFrame &f,float t,int theme)
   }
   for(int i=0;i<28;++i) {
     RoomWebPetal &p=f.petals[i];
-    p.x=fmodf(i*37+t*(8+i%3),370)-25+sinf(t*.9f+i)*5;
-    p.y=-12+fmodf(i*29+t*(5+i%2),264)+sinf(t*.65f+i)*2;
-    p.rx=2.6f+(i%3)*.45f;p.ry=1.25f+(i%2)*.3f;p.angle=t*.5f+i;
+    const float a=roomPetalNoise(i,0x68bc21ebu),b=roomPetalNoise(i,0x02e5be93u);
+    const float c=roomPetalNoise(i,0x967a889bu),d=roomPetalNoise(i,0x368cc8b7u);
+    const float phase=roomPetalNoise(i,0x51ed270bu)*pi*2;
+    const float baseX=8+((i*3)%7+a)*304/7,baseY=8+(i/7+b)*56;
+    p.x=fmodf(baseX+25+t*(7+c*7),370)-25+sinf(t*(.45f+c*.45f)+phase)*(2+a*3);
+    p.y=fmodf(baseY+12+t*(3+d*4),264)-12+sinf(t*(.35f+d*.3f)+phase)*2;
+    p.rx=2.6f+(i%3)*.45f;p.ry=1.25f+(i%2)*.3f;p.angle=t*(.3f+d*.4f)+phase;
     p.cs=cosf(p.angle);p.sn=sinf(p.angle);
     p.color=i%2?RGB565(255,208,233):RGB565(255,240,188);
   }

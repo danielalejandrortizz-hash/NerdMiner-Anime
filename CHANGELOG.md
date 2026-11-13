@@ -2,6 +2,14 @@
 
 [Volver al README](README.md)
 
+## V1.6.9 · 13 de noviembre de 2026
+
+- Pétalos repartidos por toda la pantalla desde el primer fotograma, con
+  posiciones independientes, distintas velocidades, balanceos y giros.
+- Eliminadas las trayectorias regularmente espaciadas que formaban filas.
+- Misma distribución en la web y el firmware. Pruebas de cobertura de los
+  cuatro cuadrantes, separación vertical y equivalencia entre ambos códigos.
+
 ## V1.6.8 · 13 de noviembre de 2026
 
 - El firmware toma la web como referencia: la demo no se ha simplificado ni

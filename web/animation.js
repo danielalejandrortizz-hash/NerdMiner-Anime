@@ -16,6 +16,13 @@
     compare.setAttribute('aria-checked',String(original));
   };
   let elapsed=0,previous=0;
+  // Independent deterministic seeds keep the field scattered, not in lanes.
+  function petalNoise(i,salt){
+    let n=(Math.imul(i+1,1103515245)+salt)>>>0;
+    n=Math.imul(n^(n>>>16),2246822519)>>>0;
+    n=Math.imul(n^(n>>>13),3266489917)>>>0;
+    return ((n^(n>>>16))>>>0)/4294967296;
+  }
   function glow(x,y,r,color,alpha){
     const g=ctx.createRadialGradient(x,y,0,x,y,r);
     g.addColorStop(0,color);g.addColorStop(1,'transparent');
@@ -120,9 +127,13 @@
     }
     // Layered petals: fractional positions, gentle sway and a soft outline.
     for(let i=0;i<28;i++){
-      const x=(((i*37+t*(8+i%3))%370)+370)%370-25+Math.sin(t*.9+i)*5;
-      const y=-12+(((i*29+t*(5+i%2))%264)+264)%264+Math.sin(t*.65+i)*2;
-      ctx.save();ctx.translate(x,y);ctx.rotate(t*.5+i);
+      const a=petalNoise(i,0x68bc21eb),b=petalNoise(i,0x02e5be93);
+      const c=petalNoise(i,0x967a889b),d=petalNoise(i,0x368cc8b7);
+      const phase=petalNoise(i,0x51ed270b)*Math.PI*2;
+      const baseX=8+((i*3)%7+a)*304/7,baseY=8+(Math.floor(i/7)+b)*56;
+      const x=((baseX+25+t*(7+c*7))%370+370)%370-25+Math.sin(t*(.45+c*.45)+phase)*(2+a*3);
+      const y=((baseY+12+t*(3+d*4))%264+264)%264-12+Math.sin(t*(.35+d*.3)+phase)*2;
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*(.3+d*.4)+phase);
       ctx.shadowColor='#633346';ctx.shadowBlur=1.5;ctx.shadowOffsetY=.6;
       ctx.fillStyle=i%2?'#ffd0e9':'#fff0bc';ctx.globalAlpha=.96;
       ctx.beginPath();ctx.ellipse(0,0,2.6+(i%3)*.45,1.25+(i%2)*.3,0,0,Math.PI*2);
