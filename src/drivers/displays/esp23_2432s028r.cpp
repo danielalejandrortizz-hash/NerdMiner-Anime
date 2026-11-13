@@ -864,7 +864,8 @@ static void paintSetup(TFT_eSPI &d)
 static void paintChrome(TFT_eSPI &d, int scr)
 {
 #ifdef CYD_THEME_ROOM
-  if (scr == 3 || scr == 4 || (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK || scr == SCR_MARKET)))
+  if (scr == 3 || scr == 4 || scr == 5 ||
+      (roomActive() && (scr == SCR_MINE || scr == SCR_CLOCK || scr == SCR_MARKET)))
   {
     roomChrome(scr);
     return;
@@ -1366,7 +1367,7 @@ void esp32_2432S028R_AnimateCurrentScreen(unsigned long frame)
   if (!uiLive || uiScreen < 0)
     return;
 #ifdef CYD_THEME_ROOM
-  if (uiScreen == 3 || uiScreen == 4 || roomActive())
+  if (uiScreen == 3 || uiScreen == 4 || uiScreen == 5 || roomActive())
   {
     if (screenLit())
       roomAnimate(frame);

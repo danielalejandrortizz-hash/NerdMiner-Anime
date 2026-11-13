@@ -17,7 +17,7 @@ enum { TL_DATUM, TC_DATUM, TR_DATUM, MC_DATUM };
 enum { SCR_MINE, SCR_MARKET, SCR_CLOCK };
 enum { NM_waitingConfig, NM_Connecting, NM_hashing };
 enum { W_HERO, W_DATE, W_HDR, W_T0, W_T1, W_T2, W_T3, W_HH, W_COLON, W_MM };
-static constexpr int SCR_W=320, SCR_H=240;
+static constexpr int SCR_W=320, SCR_H=240, HDR_H=26;
 static constexpr uint16_t C_BG=RGB565(5,7,13), C_EDGE=RGB565(30,41,62);
 static int uiScreen=0;
 static uint8_t roomTheme=0;
@@ -77,6 +77,7 @@ struct TFT_eSPI {
       }else{if(ch<128)for(int col=0;col<5;col++)for(int row=0;row<8;row++)if(font[ch*5+col]&(1<<row))drawPixel(x+col,y+row,color);x+=6;}
     }
   }
+  void drawFastHLine(int x,int y,int w,uint16_t c){for(int i=0;i<w;++i)drawPixel(x+i,y,c);}
   void drawRect(int x,int y,int w,int h,uint16_t c){for(int i=0;i<w;i++){drawPixel(x+i,y,c);drawPixel(x+i,y+h-1,c);}for(int i=0;i<h;i++){drawPixel(x,y+i,c);drawPixel(x+w-1,y+i,c);}}
   void drawRoundRect(int x,int y,int w,int h,int,uint16_t c){drawRect(x,y,w,h,c);}
 };
@@ -100,6 +101,11 @@ struct ClockV{String hh,mm,date;};
 struct MarketV{HdrV hdr;String price,block,fee,diff,remaining;};
 static String btcPairLabel(){return String("BTC / EUR");}
 #include "drivers/displays/roomTheme.inc"
+static unsigned pulseChromeCalls=0;
+static void chromeMine(TFT_eSPI&){++pulseChromeCalls;}
+static void chromeMarket(TFT_eSPI&){++pulseChromeCalls;}
+static void chromeClock(TFT_eSPI&){++pulseChromeCalls;}
+#include "room_driver_chrome.inc"
 
 static void save(const std::string &path){
   std::ofstream file(path,std::ios::binary);file<<"P6\n320 240\n255\n";
@@ -107,6 +113,24 @@ static void save(const std::string &path){
 }
 int main(int argc,char **argv){
   assert(argc==2);const std::string path=argv[1];
+  // Exercise the actual entry path: HASHRATE must never get Pulse's black
+  // clock panels before its widgets are painted. Check every background pixel.
+  for(roomTheme=0;roomTheme<5;++roomTheme) {
+    for(int page=0;page<=5;++page) {
+      uiScreen=-1;
+      const unsigned oldPulse=pulseChromeCalls;
+      ensureChrome(page);
+      const bool illustrated=roomTheme<4 || page>=3;
+      assert((pulseChromeCalls==oldPulse)==illustrated);
+      if(illustrated && page!=3)
+        for(int y=0;y<SCR_H;++y)for(int x=0;x<SCR_W;++x)
+          assert(tft.pixels[y*SCR_W+x]==roomPixel(x,y));
+      const unsigned oldPushes=pushes;
+      ensureChrome(page);
+      assert(pushes==oldPushes);
+    }
+  }
+  roomTheme=0;
   assert(roomRate("nan")=="--");assert(roomRate("inf")=="--");
   assert(roomRate("-1")=="--");assert(roomRate("990.0")=="990.0");
   assert(roomRate("0.01")=="0.01");assert(roomRate("junk")=="--");
@@ -234,6 +258,6 @@ int main(int argc,char **argv){
   WiFi.state=WL_CONNECTED;g_shareFoundEvents=8;roomPaintMine(m);assert(roomShareVisible);fakeMs=2000;roomAnimate(5);assert(!roomShareVisible);
   uiScreen=3;roomChrome(3);save(path+"/themes.ppm");
   assert(peakSprite<=10000);
-  printf("OK: actual room renderer, four assets, scene/clock/menu, offline, caching, navigation, allocation failures, share expiry; peak widget %zu bytes. Hardware not tested.\n",peakSprite);
+  printf("OK: actual room renderer, four assets, scene/clock/menu, offline, caching, actual page routing, navigation, allocation failures, share expiry; peak widget %zu bytes. Hardware not tested.\n",peakSprite);
 }
 

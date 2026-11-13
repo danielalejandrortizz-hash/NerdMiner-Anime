@@ -9,6 +9,18 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
+## V1.6.5 · 13 de noviembre de 2026
+
+- Corregida la selección del fondo al entrar en HASHRATE: la página 5 no
+  estaba incluida en la ruta KI Room y preparaba los paneles negros del reloj
+  Pulse. Ahora restaura el paisaje completo antes de pintar los datos.
+- HASHRATE tampoco ejecuta la animación de Pulse al usar ese tema.
+- La prueba del renderizador ahora ejecuta las funciones reales `paintChrome`
+  y `ensureChrome` del driver, además de los widgets. Comprueba todas las páginas
+  y temas y compara cada píxel del fondo con el paisaje esperado. Esta prueba
+  reproduce el fallo con el código anterior.
+- La verificación física en la placa sigue pendiente.
+
 ## V1.6.4 · 13 de noviembre de 2026
 
 - Los números grandes de HASHRATE y RELOJ se componen fila a fila sobre el
@@ -446,7 +458,7 @@ Fill in **Backup pool URL**, port and (optionally) password to have the miner ca
 `http://<miner IP address>/api/status` returns the miner's state as JSON, for Home Assistant, Grafana or your own scripts. It needs no login and holds nothing the screen doesn't show (no wallet address, no passwords):
 
 ```json
-{"version":"V1.6.4","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
+{"version":"V1.6.5","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
  "total_mhashes":59113,"mining_time_s":60789,"templates":2108,"best_diff":5.26,"shares_32bit":9,
  "blocks_found":0,"shares_accepted":412,"shares_rejected":0,
  "pool":{"address":"btc.heliospool.com","port":3333,"backup":false,"subscribed":true,"difficulty":0.0007},

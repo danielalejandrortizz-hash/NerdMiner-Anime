@@ -13,6 +13,19 @@ dest.mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(prefix="room-check-") as temp:
     temp = Path(temp)
     (temp / "pgmspace.h").write_text("#pragma once\n#define PROGMEM\n")
+    # Compile the driver's actual page routing as well as the drawing helpers.
+    driver = (root / "src/drivers/displays/esp23_2432s028r.cpp").read_text()
+    fragments = []
+    for signature in ("static void paintChrome(TFT_eSPI &d, int scr)",
+                      "static void ensureChrome(int scr)"):
+        start = driver.index(signature + "\n{")
+        end = driver.index("{", start) + 1
+        depth = 1
+        while depth:
+            depth += (driver[end] == "{") - (driver[end] == "}")
+            end += 1
+        fragments.append(driver[start:end])
+    (temp / "room_driver_chrome.inc").write_text("\n".join(fragments))
     command = ["g++", "-std=c++11", "-Wall", "-Wextra", "-g", "-DCYD_THEME_ROOM=1",
                "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
                "-I", str(temp), "-I", str(root/"test/native_shim"),
