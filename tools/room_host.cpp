@@ -104,6 +104,12 @@ static void save(const std::string &path){
 }
 int main(int argc,char **argv){
   assert(argc==2);const std::string path=argv[1];
+  assert(roomRate("nan")=="--");assert(roomRate("inf")=="--");
+  assert(roomRate("-1")=="--");assert(roomRate("990.0")=="990.0");
+  assert(roomRate("0.01")=="0.01");assert(roomRate("junk")=="--");
+  assert(roomComparison(0.0478,120e12)=="< 0.0001 %");
+  assert(roomComparison(1,100)=="1.0000 %");
+  assert(roomComparison(1,0)=="--");assert(roomComparison(0,100)=="--");
   MineV m;m.hdr.time="18:42";m.hash="990.0";m.best="0.0478";m.accepted="24";m.rejected="0";m.workers="3";m.date="THU  12 NOV 2026";m.strip.v[3]="1d 04h";
   for(roomTheme=0;roomTheme<4;roomTheme++){
     uiScreen=-1;roomPaintWelcome(tft,"KI ROOM");save(path+"/loading-"+std::to_string(roomTheme)+".ppm");
