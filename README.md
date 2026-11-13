@@ -9,6 +9,17 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
+## Correcciones de la interfaz
+
+- El hashrate ignora los repintados con intervalo cero para no contaminar la media.
+- Los kH/s grandes se muestran como un número continuo, con decimal alineado.
+- La comparación del mejor intento con la red muestra `< 0.0001 %` para valores
+  muy pequeños y `--` cuando faltan datos; no representa progreso acumulado.
+- Pétalos visibles también delante del personaje, sin pisar las estadísticas.
+- El instalador sigue la paleta cálida y las tipografías de la demo principal.
+
+Las comprobaciones automáticas no sustituyen la prueba física de la placa.
+
 ## Los cuatro paisajes de KI Room
 
 Las mismas ilustraciones que puedes previsualizar en la [demo animada](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/), incluidas en el firmware.
