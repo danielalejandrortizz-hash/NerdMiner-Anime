@@ -45,14 +45,6 @@
       ctx.fillStyle='#ffda91';ctx.fillRect(106+Math.sin(t+i)*3-i*.6,y,6+i*1.7,.65);
     }
     ctx.globalAlpha=1;
-    // Petals drift through the foreground.
-    for(let i=0;i<20;i++){
-      const x=(((i*37+t*(8+i%3))%370)+370)%370-25;
-      const y=30+((i*29+t*(5+i%2))%205);
-      ctx.save();ctx.translate(x,y);ctx.rotate(t*.6+i);
-      ctx.fillStyle=i%2?'#f5bad8':'#ffe5aa';ctx.globalAlpha=.8;
-      ctx.beginPath();ctx.ellipse(0,0,2.0,.85,0,0,Math.PI*2);ctx.fill();ctx.restore();
-    }
     if(theme===0||theme===1){
       // Local deformation tapers to zero at the edges: the body breathes and
       // the forearms/tool follow a repeating mining rhythm without cutout seams.
@@ -126,15 +118,23 @@
     }else{
       glow(206,195,17,'#d5adff',.3+.16*Math.sin(t*2.8));
     }
+    // Petals drift through the foreground.
+    for(let i=0;i<20;i++){
+      const x=(((i*37+t*(8+i%3))%370)+370)%370-25;
+      const y=30+((i*29+t*(5+i%2))%205);
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*.6+i);
+      ctx.fillStyle=i%2?'#f5bad8':'#ffe5aa';ctx.globalAlpha=.95;
+      ctx.beginPath();ctx.ellipse(0,0,2.4,1.1,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+
   }
   function tick(now){
     const delta=previous?Math.min((now-previous)/1000,.1):0;previous=now;
-    if(reduce.matches){ctx.clearRect(0,0,320,240)}
-    else if(!document.hidden&&!screen.classList.contains('paused')&&!screen.classList.contains('original')){
+    if(!document.hidden&&!screen.classList.contains('paused')&&!screen.classList.contains('original')){
       elapsed+=delta;draw(elapsed);
     }
     requestAnimationFrame(tick);
   }
-  new MutationObserver(()=>{ctx.clearRect(0,0,320,240);if(!reduce.matches)draw(elapsed)}).observe(screen,{attributes:true,attributeFilter:['data-theme']});
+  new MutationObserver(()=>{ctx.clearRect(0,0,320,240);if(!screen.classList.contains('paused'))draw(elapsed)}).observe(screen,{attributes:true,attributeFilter:['data-theme']});
   requestAnimationFrame(tick);
 })();
