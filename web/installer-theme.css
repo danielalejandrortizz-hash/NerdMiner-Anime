@@ -1,0 +1,13 @@
+/* The installer follows the warm, quiet visual language of the main demo. */
+:root{--bg:#17191b;--panel:#1c1f1f;--ink:#e5e3de;--muted:#969b94;--orange:#d5b490;--line:#343831;--blue:#e1c3a2;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{background:radial-gradient(ellipse at 24% 53%,#3a30261f,transparent 60%),#17191b}
+h1,h2,.install-copy h2{font-family:Georgia,"Times New Roman",serif;font-weight:400;text-transform:none;letter-spacing:-1.4px;line-height:1.12}
+h1{font-size:clamp(34px,4.2vw,54px)}h2,.install-copy h2{font-size:clamp(30px,3.4vw,44px)}h1 em,h2 em{font-style:normal;color:#d5b490}
+.brand{font-weight:500;font-size:11px;letter-spacing:2px}.brand strong{display:block;font-size:7px;letter-spacing:1.5px;color:#969b94;margin-top:5px}
+.emblem{font:italic 36px Georgia,serif;letter-spacing:-3px;color:#e1c3a2;background:none;border:0;outline:0}
+.eyebrow{font-weight:500;font-size:9px;letter-spacing:1.9px}.primary{background:#d5b490;color:#17191b;border-radius:24px;box-shadow:none;text-transform:none;letter-spacing:0;font-weight:500}
+.scene-frame{transform:none;background:linear-gradient(135deg,#363331,#292827 45%,#242423);border:1px solid #55504a;box-shadow:0 20px 45px #0006;border-radius:11px}
+.install-panel{background:#1c1f1f;border:1px solid #343831;box-shadow:none;border-radius:11px}.install-panel select{background:#17191b;border-color:#55504a;color:#e5e3de;border-radius:7px}
+.build-state{background:#17191b;border-color:#d5b490}.character{background:#1c1f1f;border-color:#343831;border-radius:8px}.character.selected{border-color:#d5b490}.animation-pause{background:#17191bd9;border-color:#d5b49066;border-radius:20px}
+.scene-caption,.scene-label{font-family:inherit}.panel-heading{font-weight:500;letter-spacing:1.8px}.hero{min-height:0;padding-top:30px;padding-bottom:55px}.nav{height:90px}
+@media(max-width:640px){.brand{font-size:9px;letter-spacing:1px}.brand strong{font-size:6px}h1{font-size:38px}.nav{height:auto;min-height:85px;gap:16px;flex-wrap:wrap;padding-top:20px;padding-bottom:20px}.nav nav{flex-wrap:wrap}.scene-frame{transform:none}.install-copy h2{font-size:36px}}
