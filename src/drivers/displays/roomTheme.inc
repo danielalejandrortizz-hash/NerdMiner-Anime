@@ -100,6 +100,28 @@ static void roomTiny(TFT_eSPI &d, const char *value, int x, int y)
   d.setFreeFont(NULL);
 }
 
+// Reject non-numeric startup/disconnected values before painting statistics.
+static String roomRate(const String &raw)
+{
+  if (raw == "--") return raw;
+  char *end = nullptr;
+  const double value = strtod(raw.c_str(), &end);
+  if (end == raw.c_str() || *end || !isfinite(value) || value < 0) return String("--");
+  char text[24];
+  snprintf(text, sizeof(text), value < 100 ? "%.2f" : "%.1f", value);
+  return String(text);
+}
+
+static String roomComparison(double best, double target)
+{
+  if (!isfinite(best) || !isfinite(target) || best <= 0 || target <= 0) return String("--");
+  const double percent = best / target * 100.0;
+  if (percent < 0.0001) return String("< 0.0001 %");
+  char text[32];
+  snprintf(text, sizeof(text), "%.4f %%", percent);
+  return String(text);
+}
+
 static String roomCount(const String &value)
 {
   if (value.length() <= 5)
@@ -145,7 +167,7 @@ static void roomPaintMine(const MineV &m)
     wEnd(16, 56);
     done(W_DATE, key);
   }
-  roomMetric(W_T0, 16, 81, "HASHRATE KH/s", WiFi.status() == WL_CONNECTED ? m.hash : String("--"));
+  roomMetric(W_T0, 16, 81, "HASHRATE KH/s", WiFi.status() == WL_CONNECTED ? roomRate(m.hash) : String("--"));
   roomMetric(W_T1, 91, 81, "BEST DIFF", m.best);
   roomMetric(W_T2, 16, 124, "WORKERS / POOL", WiFi.status() == WL_CONNECTED ? m.workers : String("--"));
   roomMetric(W_T3, 91, 124, "SHARES OK / KO", roomCount(m.accepted) + "/" + roomCount(m.rejected));
@@ -352,6 +374,12 @@ static void roomAnimate(unsigned long frame)
       if (roomTheme == 2 && phase % 12 < 4 && x >= 278 && x <= 287 &&
           y == 169 + (x-278)/2 + ((x + int(phase)) % 3))
         color = energy;
+      for (int i = 0; i < 20; ++i) {
+        const int px = int((i * 37 + now / (125 - (i % 3) * 12)) % 370) - 25;
+        const int py = 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205);
+        if (y >= py && y < py + 2 && x >= px && x < px + 4)
+          color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 230);
+      }
       row[dx] = color;
     }
     int start = 0;
@@ -375,8 +403,10 @@ static void roomAnimate(unsigned long frame)
     bool petalRow = false, oldPetalRow = false;
     for (int i = 0; i < 20; ++i)
     {
-      if (y == 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205)) petalRow = true;
-      if (y == 30 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205)) oldPetalRow = true;
+      if (y >= 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205) &&
+          y < 32 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205)) petalRow = true;
+      if (y >= 30 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205) &&
+          y < 32 + int((i * 29 + oldLandscapeAt / (i % 2 ? 166 : 200)) % 205)) oldPetalRow = true;
     }
     if (!petalRow && !oldPetalRow && (y < 165 || y >= 214)) continue;
     for (int x = 0; x < SCR_W; ++x)
@@ -400,8 +430,8 @@ static void roomAnimate(unsigned long frame)
         {
           const int px = int((i * 37 + now / (125 - (i % 3) * 12)) % 370) - 25;
           const int py = 30 + int((i * 29 + now / (i % 2 ? 166 : 200)) % 205);
-          if (y == py && x >= px && x < px + 3)
-            color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 205);
+          if (y >= py && y < py + 2 && x >= px && x < px + 4)
+            color = mix565(color, i % 2 ? RGB565(245,186,216) : RGB565(255,229,170), 230);
         }
       landscape[x] = color;
     }
@@ -458,7 +488,9 @@ static void roomDataLine(int id, int y, const char *label, const String &value)
   String key = String(label) + value;
   if (!need(id, key) || !roomBegin(12, y, 194, 25)) return;
   roomTiny(wgt, label, 0, 0);
-  roomText(wgt, value, 0, 9, ROOM_TEXT, 2);
+  wgt.setTextFont(2);
+  const uint8_t font = wgt.textWidth(value) <= 190 ? 2 : 1;
+  roomText(wgt, value, 0, 9, ROOM_TEXT, font);
   wEnd(12, y); done(id, key);
 }
 
@@ -475,11 +507,11 @@ static void roomPaintMarket(const MarketV &m)
 static void roomPaintStats(const String &best, const String &target, const String &ratio,
                            const String &ok, const String &ko, const String &hash)
 {
-  roomDataLine(W_HDR, 8, "TU MEJOR INTENTO / RED", ratio);
+  roomDataLine(W_HDR, 8, "MEJOR INTENTO / RED (%)", ratio);
   roomDataLine(W_T0, 45, "MEJOR DIFICULTAD", best);
   roomDataLine(W_T1, 82, "OBJETIVO DE RED", target);
   roomDataLine(W_T2, 119, "SHARES >=1 ACEPTADAS / RECHAZADAS", roomCount(ok) + "/" + roomCount(ko));
-  roomDataLine(W_T3, 156, "HASHRATE KH/s", hash);
+  roomDataLine(W_T3, 156, "HASHRATE kH/s", roomRate(hash));
   if (need(W_DATE, "note")) {
     roomRestore(12, 196, 296, 35);
     roomTiny(out(), "COMPARACION, NO PROGRESO ACUMULADO", 12, 201);
@@ -489,7 +521,8 @@ static void roomPaintStats(const String &best, const String &target, const Strin
 }
 
 
-// Draw each large digit separately to keep the scratch sprite below 10 KB.
+// Paint one proportional number through narrow tiles, keeping the decimal
+// on the same baseline and the scratch sprite below 10 KB.
 static void roomPaintHashrate(const String &hash)
 {
   if (need(W_HDR, "hashrate")) {
@@ -497,17 +530,17 @@ static void roomPaintHashrate(const String &hash)
     roomText(out(), "kH/s", 160, 153, ROOM_TEXT, 2, TC_DATUM);
     done(W_HDR, "hashrate");
   }
-  if (!need(W_HERO, hash)) return;
-  // Each glyph is at most 30px wide; even 12345.6 fits in 7 cells.
-  const String value = hash.length() <= 7 ? hash : String("--");
-  roomRestore(12, 87, 296, 60);
-  const int start = (SCR_W - value.length() * 40) / 2;
-  for (unsigned i = 0; i < value.length(); ++i) {
-    if (!roomBegin(start + i * 40, 87, 40, 60)) return;
-    roomFreeText(wgt, value.substring(i, i + 1), 20, 30, &FreeSans24pt7b);
-    wEnd(start + i * 40, 87);
+  const String value = roomRate(hash);
+  if (!need(W_HERO, value)) return;
+  wgt.setFreeFont(&FreeSans24pt7b);
+  const GFXfont *font = wgt.textWidth(value) <= 280 ? &FreeSans24pt7b : &FreeSans18pt7b;
+  for (int x = 12; x < 308; x += 64) {
+    const int width = 308 - x < 64 ? 308 - x : 64;
+    if (!roomBegin(x, 87, width, 60)) return;
+    roomFreeText(wgt, value, 160 - x, 30, font);
+    wEnd(x, 87);
   }
   roomRestore(42, 188, 236, 20);
-  roomText(out(), hash == "--" ? "SIN RED" : "HASHRATE ACTUAL", 160, 191, ROOM_DIM, 1, TC_DATUM);
-  done(W_HERO, hash);
+  roomText(out(), value == "--" ? "SIN DATOS" : "HASHRATE ACTUAL", 160, 191, ROOM_DIM, 1, TC_DATUM);
+  done(W_HERO, value);
 }
