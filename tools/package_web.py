@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -33,6 +34,14 @@ def package(destination, version):
             raise ValueError(f'Firmware exceeds huge_app partition: {environment}')
         parts[environment] = files
     shutil.copytree(ROOT / 'web', destination)
+    # Change local asset URLs on every release so cached scripts/styles cannot
+    # mix the previous installer with the new demo.
+    for page in destination.rglob('*.html'):
+        html = page.read_text()
+        html = re.sub(r'((?:src|href)=["\'])([^"\'?#]+\.(?:js|css))(?:\?[^"\']*)?(["\'])',
+                      lambda match: (match[0] if match[2].startswith(('https:', 'http:', '//'))
+                                     else f'{match[1]}{match[2]}?v={version}{match[3]}'), html)
+        page.write_text(html)
     (destination / '.nojekyll').touch()
     assets = destination / 'assets'
     assets.mkdir(exist_ok=True)
