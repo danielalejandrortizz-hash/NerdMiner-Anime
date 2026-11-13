@@ -60,12 +60,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Verify live demo and firmware downloads
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: python tools/check_live_site.py "$SITE_URL" "ki-${GITHUB_SHA::7}"
