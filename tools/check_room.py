@@ -23,6 +23,15 @@ with tempfile.TemporaryDirectory(prefix="room-check-") as temp:
     # LeakSanitizer cannot operate in a ptraced sandbox; ASan/UBSan remain on.
     subprocess.run([str(temp/"room-check"), str(temp)], check=True,
                    env=dict(os.environ, ASAN_OPTIONS="detect_leaks=0"))
+    # Compile the same renderer with effects excluded, and verify no scene writes.
+    static_command = command.copy()
+    static_command.insert(1, "-DCYD_ROOM_STATIC=1")
+    static_command[-1] = str(temp/"room-static-check")
+    subprocess.run(static_command, check=True)
+    static_output = temp / "static"
+    static_output.mkdir()
+    subprocess.run([str(temp/"room-static-check"), str(static_output)], check=True,
+                   env=dict(os.environ, ASAN_OPTIONS="detect_leaks=0"))
     for ppm in temp.glob("*.ppm"):
         header, pixels = ppm.read_bytes().split(b"\n255\n", 1)
         assert header == b"P6\n320 240" and len(pixels) == 320*240*3
