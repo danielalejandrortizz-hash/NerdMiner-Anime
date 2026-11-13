@@ -9,6 +9,19 @@ y el firmware animado es la opción predeterminada para la placa.
 **[Instalar o descargar firmware](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html#instalar)** ·
 **[Versión sin animación](https://danielalejandrortizz-hash.github.io/NerdMiner-Anime/instalar.html?animation=static#instalar)**
 
+## V1.6.4 · 13 de noviembre de 2026
+
+- Los números grandes de HASHRATE y RELOJ se componen fila a fila sobre el
+  paisaje, sin crear ni liberar sprites y sin reutilizar el estado de fuente
+  de otro widget. Cada actualización restaura toda su zona antes de dibujar.
+- El reloj aparece desde la primera entrada y al volver a la página, con la
+  hora local disponible. Ya no espera consultas HTTPS de precio o bloques.
+  Hasta sincronizar la hora muestra `--:--` y un aviso.
+- Nuevas pruebas de navegación repetida, cambios de cifras largas a cortas,
+  primera entrada al reloj y fallos simulados de reserva de memoria.
+- Las pruebas automáticas no verifican el comportamiento eléctrico de la pantalla;
+  queda pendiente comprobar esta corrección en una placa física.
+
 ## V1.6.3 · 13 de noviembre de 2026
 
 - La pantalla HASHRATE usa la media local de los últimos 10 segundos, igual que
@@ -191,7 +204,8 @@ CYD, los entornos Room y el instalador. Se mantienen la licencia y los créditos
   aplicación; la RAM estática es **58.536 bytes**, un **17,9 %**. Esto no mide
   el consumo de heap durante el uso.
 - Las pruebas de escritorio del renderizador pasan con ASan/UBSan: escenas,
-  reloj, menú, desconexión, caché y expiración del aviso de share; la variante
+  reloj, menú, desconexión, caché, navegación repetida, fallos de reserva de memoria
+  y expiración del aviso de share; la variante
   estática no realiza repintados decorativos.
 - Las pruebas del instalador comprueban archivos ausentes, rutas de GitHub
   Pages y cambios de selección. Sin binarios disponibles, no permite instalar.
@@ -432,7 +446,7 @@ Fill in **Backup pool URL**, port and (optionally) password to have the miner ca
 `http://<miner IP address>/api/status` returns the miner's state as JSON, for Home Assistant, Grafana or your own scripts. It needs no login and holds nothing the screen doesn't show (no wallet address, no passwords):
 
 ```json
-{"version":"V1.6.3","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
+{"version":"V1.6.4","uptime_s":3605,"state":"mining","hashrate_khs":991.2,"hashrate_avg_khs":988.7,
  "total_mhashes":59113,"mining_time_s":60789,"templates":2108,"best_diff":5.26,"shares_32bit":9,
  "blocks_found":0,"shares_accepted":412,"shares_rejected":0,
  "pool":{"address":"btc.heliospool.com","port":3333,"backup":false,"subscribed":true,"difficulty":0.0007},

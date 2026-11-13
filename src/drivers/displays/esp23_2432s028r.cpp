@@ -45,6 +45,7 @@ static void roomSelectTheme(uint8_t theme);
 static void roomThemeScreen(unsigned long elapsed);
 static void roomStatsScreen(unsigned long elapsed);
 static void roomHashrateScreen(unsigned long elapsed);
+static void roomClockScreen();
 #endif
 
 #define WIDTH 130
@@ -920,6 +921,7 @@ static bool haveMine = false, haveMarket = false, haveClock = false;
 static void repaintCached(int scr)
 {
 #ifdef CYD_THEME_ROOM
+  if (scr == SCR_CLOCK && roomActive()) { roomClockScreen(); return; }
   if (scr == 4) { roomStatsScreen(0); return; }
   if (scr == 5) { roomHashrateScreen(0); return; }
   if (scr == 3)
@@ -969,6 +971,31 @@ static void roomStatsScreen(unsigned long elapsed)
   roomPaintStats(String(bestText), diff.length() ? diff : String("--"), ratio,
                  String(data.completedShares), String(shares32Rejected),
                  WiFi.status() == WL_CONNECTED ? data.currentHashRate : String("--"));
+}
+
+// Page changes must paint the local clock even before its first data tick.
+// getClockData also fetches price/height over HTTPS; this view needs neither.
+static void roomClockScreen()
+{
+  ClockV c;
+  c.hh = "--";
+  c.mm = "--";
+  c.date = "SIN HORA - ESPERANDO SINCRONIZACION";
+  int hour, minute, second, day, month, year;
+  if (getLocalClock(hour, minute, second, day, month, year)) {
+    char hh[3], mm[3], date[16];
+    snprintf(hh, sizeof(hh), "%02d", hour);
+    snprintf(mm, sizeof(mm), "%02d", minute);
+    snprintf(date, sizeof(date), "%02d/%02d/%04d", day, month, year);
+    c.hh = hh;
+    c.mm = mm;
+    c.date = fmtDate(date);
+  }
+  uiLive = true;
+  ensureChrome(SCR_CLOCK);
+  lastClock = c;
+  haveClock = true;
+  roomPaintClock(c);
 }
 
 static void roomHashrateScreen(unsigned long elapsed)
@@ -1187,6 +1214,9 @@ void esp32_2432S028R_MarketScreen(unsigned long mElapsed)
 
 void esp32_2432S028R_ClockScreen(unsigned long mElapsed)
 {
+#ifdef CYD_THEME_ROOM
+  if (roomActive()) { roomClockScreen(); return; }
+#endif
   clock_data data = getClockData(mElapsed);
   uiLive = true;
   ensureChrome(SCR_CLOCK);

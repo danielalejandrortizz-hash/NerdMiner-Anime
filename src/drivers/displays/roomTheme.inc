@@ -198,12 +198,64 @@ static void roomPaintMine(const MineV &m)
   roomShareKnown = true;
 }
 
+// Large readouts are composited directly into a single scanline. They never
+// allocate sprites or depend on the TFT library's retained font/viewport state.
+static int roomNumberWidth(const String &value, const GFXfont *font)
+{
+  int width = 0;
+  for (unsigned i = 0; i < value.length(); ++i) {
+    const unsigned ch = (unsigned char)value[i];
+    if (ch >= font->first && ch <= font->last)
+      width += font->glyph[ch - font->first].xAdvance;
+  }
+  return width;
+}
+
+static void roomNumber(int x, int y, int width, int height,
+                       const String &value, const GFXfont *font)
+{
+  int above = 0, below = 0;
+  for (unsigned i = 0; i < value.length(); ++i) {
+    const unsigned ch = (unsigned char)value[i];
+    if (ch < font->first || ch > font->last) continue;
+    const GFXglyph &g = font->glyph[ch - font->first];
+    if (-g.yOffset > above) above = -g.yOffset;
+    if (g.yOffset + g.height > below) below = g.yOffset + g.height;
+  }
+  const int left = (width - roomNumberWidth(value, font)) / 2;
+  const int baseline = (height + above - below) / 2;
+  uint16_t row[SCR_W];
+  for (int dy = 0; dy < height; ++dy) {
+    for (int dx = 0; dx < width; ++dx) row[dx] = roomPixel(x + dx, y + dy);
+    for (int pass = 0; pass < 2; ++pass) {
+      const int offset = pass == 0 ? 1 : 0;
+      const uint16_t color = pass == 0 ? RGB565(42, 34, 52) : ROOM_TEXT;
+      int pen = left + offset;
+      for (unsigned i = 0; i < value.length(); ++i) {
+        const unsigned ch = (unsigned char)value[i];
+        if (ch < font->first || ch > font->last) continue;
+        const GFXglyph &g = font->glyph[ch - font->first];
+        const int gy = dy - baseline - g.yOffset - offset;
+        if (gy >= 0 && gy < g.height) {
+          for (int gx = 0; gx < g.width; ++gx) {
+            const int dx = pen + g.xOffset + gx;
+            const unsigned bit = gy * g.width + gx;
+            if (dx >= 0 && dx < width &&
+                (pgm_read_byte(font->bitmap + g.bitmapOffset + bit / 8) & (0x80 >> (bit % 8))))
+              row[dx] = color;
+          }
+        }
+        pen += g.xAdvance;
+      }
+    }
+    roomPushRow(x, y + dy, width, row);
+  }
+}
+
 static void roomClockPart(int id, int x, int width, const String &value)
 {
-  if (!need(id, value) || !roomBegin(x, 88, width, 64))
-    return;
-  roomFreeText(wgt, value, width / 2, 32, &FreeSans24pt7b);
-  wEnd(x, 88);
+  if (!need(id, value)) return;
+  roomNumber(x, 88, width, 64, value, &FreeSans24pt7b);
   done(id, value);
 }
 
@@ -522,8 +574,7 @@ static void roomPaintStats(const String &best, const String &target, const Strin
 }
 
 
-// Paint one proportional number through narrow tiles, keeping the decimal
-// on the same baseline and the scratch sprite below 10 KB.
+// Restore and draw the complete number without temporary heap allocations.
 static void roomPaintHashrate(const String &hash, const String &ip = "--")
 {
   const String address = "http://" + ip + "/settings";
@@ -540,14 +591,9 @@ static void roomPaintHashrate(const String &hash, const String &ip = "--")
   }
   const String value = roomRate(hash);
   if (!need(W_HERO, value)) return;
-  wgt.setFreeFont(&FreeSans24pt7b);
-  const GFXfont *font = wgt.textWidth(value) <= 280 ? &FreeSans24pt7b : &FreeSans18pt7b;
-  for (int x = 12; x < 308; x += 64) {
-    const int width = 308 - x < 64 ? 308 - x : 64;
-    if (!roomBegin(x, 87, width, 60)) return;
-    roomFreeText(wgt, value, 160 - x, 30, font);
-    wEnd(x, 87);
-  }
+  const GFXfont *font = roomNumberWidth(value, &FreeSans24pt7b) <= 280 ?
+                        &FreeSans24pt7b : &FreeSans18pt7b;
+  roomNumber(12, 87, 296, 60, value, font);
   roomRestore(42, 188, 236, 20);
   roomText(out(), value == "--" ? "SIN DATOS" : "MEDIA LOCAL: ULTIMOS 10 S", 160, 191, ROOM_DIM, 1, TC_DATUM);
   done(W_HERO, value);

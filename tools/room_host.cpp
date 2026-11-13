@@ -11,6 +11,7 @@
 #include <Fonts/Font16.c>
 #include "media/room/RoomAssets.h"
 #define pgm_read_word(p) (*(p))
+#define pgm_read_byte(p) (*(p))
 #define RGB565(r,g,b) ((uint16_t)((((r)&0xf8)<<8)|(((g)&0xfc)<<3)|((b)>>3)))
 enum { TL_DATUM, TC_DATUM, TR_DATUM, MC_DATUM };
 enum { SCR_MINE, SCR_MARKET, SCR_CLOCK };
@@ -28,6 +29,8 @@ static constexpr int WL_CONNECTED=3;
 static struct { int state=WL_CONNECTED; int status(){return state;} } WiFi;
 static unsigned pushes=0;
 static size_t peakSprite=0;
+static bool failSpriteAlloc=false;
+static unsigned spriteRequests=0;
 
 struct TFT_eSPI {
   int width=320,height=240,datum=TL_DATUM,fontId=1;
@@ -79,7 +82,7 @@ struct TFT_eSPI {
 };
 static TFT_eSPI tft,wgt;
 static TFT_eSPI &out(){return tft;}
-static bool wBegin(int w,int h,uint16_t bg){assert(w>0&&h>0&&w<=320&&h<=240);peakSprite=std::max(peakSprite,size_t(w*h*2));wgt.width=w;wgt.height=h;wgt.pixels.assign(w*h,bg);return true;}
+static bool wBegin(int w,int h,uint16_t bg){++spriteRequests;if(failSpriteAlloc)return false;assert(w>0&&h>0&&w<=320&&h<=240);peakSprite=std::max(peakSprite,size_t(w*h*2));wgt.width=w;wgt.height=h;wgt.pixels.assign(w*h,bg);return true;}
 static void wEnd(int x,int y){tft.pushImage(x,y,wgt.width,wgt.height,wgt.pixels.data());}
 static void clearScreen(TFT_eSPI &d){std::fill(d.pixels.begin(),d.pixels.end(),C_BG);}
 static uint16_t mix565(uint16_t a,uint16_t b,uint8_t t){
@@ -177,6 +180,53 @@ int main(int argc,char **argv){
     uiScreen=3;roomChrome(3);unsigned before=pushes;fakeMs+=1000;roomAnimate(1);assert(pushes==before);
   }
 #endif
+  // Repeated navigation, shorter values and allocation failures must not
+  // leave stale fragments or blank large readouts. Compare with a fresh page.
+  for (roomTheme=0; roomTheme<4; ++roomTheme) {
+    for (int visit=0; visit<8; ++visit) {
+      uiScreen=5;resetWidgets();roomChrome(5);
+      roomPaintHashrate("12345.6", "192.168.1.123");
+      roomPaintHashrate("9.0", "192.168.1.123");
+      const auto updated=tft.pixels;
+      resetWidgets();roomChrome(5);roomPaintHashrate("9.0", "192.168.1.123");
+      assert(tft.pixels==updated);
+      uiScreen=SCR_CLOCK;resetWidgets();roomChrome(SCR_CLOCK);
+      ClockV clock;clock.hh="18";clock.mm="42";clock.date="FRI 13 NOV 2026";
+      roomPaintClock(clock);clock.hh="00";clock.mm="01";roomPaintClock(clock);
+      const auto changedClock=tft.pixels;
+      resetWidgets();roomChrome(SCR_CLOCK);roomPaintClock(clock);
+      assert(tft.pixels==changedClock);
+    }
+    uiScreen=5;resetWidgets();roomChrome(5);
+    // With all sprite allocations refused, the number must still be complete.
+    failSpriteAlloc=true;
+    roomPaintHashrate("990.0", "192.168.1.123");
+    auto withoutHeap=tft.pixels;
+    failSpriteAlloc=false;
+    resetWidgets();roomChrome(5);roomPaintHashrate("990.0", "192.168.1.123");
+    unsigned ink=0;
+    for(int y=87;y<147;++y)for(int x=12;x<308;++x) {
+      assert(tft.pixels[y*320+x]==withoutHeap[y*320+x]);
+      if(tft.pixels[y*320+x]==ROOM_TEXT)++ink;
+    }
+    assert(ink>500);
+    uiScreen=SCR_CLOCK;resetWidgets();roomChrome(SCR_CLOCK);
+    failSpriteAlloc=true;
+    ClockV clock;clock.hh="18";clock.mm="42";clock.date="FRI 13 NOV 2026";
+    roomPaintClock(clock);withoutHeap=tft.pixels;
+    failSpriteAlloc=false;
+    resetWidgets();roomChrome(SCR_CLOCK);roomPaintClock(clock);
+    ink=0;
+    for(int y=88;y<152;++y)for(int x=75;x<245;++x) {
+      assert(tft.pixels[y*320+x]==withoutHeap[y*320+x]);
+      if(tft.pixels[y*320+x]==ROOM_TEXT)++ink;
+    }
+    assert(ink>500);
+    // The scanline compositor itself never asks for a sprite.
+    const unsigned requests=spriteRequests;
+    roomNumber(12,87,296,60,"1000.0",&FreeSans24pt7b);
+    assert(spriteRequests==requests);
+  }
   roomTheme=4;uiScreen=SCR_MINE;unsigned beforePulse=pushes;roomAnimate(1);assert(pushes==beforePulse);
   roomTheme=0;uiScreen=SCR_MINE;resetWidgets();roomChrome(uiScreen);roomPaintMine(m);
   roomShareKnown=false;g_shareFoundEvents=7;roomPaintMine(m);assert(!roomShareVisible);
@@ -184,6 +234,6 @@ int main(int argc,char **argv){
   WiFi.state=WL_CONNECTED;g_shareFoundEvents=8;roomPaintMine(m);assert(roomShareVisible);fakeMs=2000;roomAnimate(5);assert(!roomShareVisible);
   uiScreen=3;roomChrome(3);save(path+"/themes.ppm");
   assert(peakSprite<=10000);
-  printf("OK: actual room renderer, four assets, scene/clock/menu, offline, caching, share expiry; peak widget %zu bytes. Hardware not tested.\n",peakSprite);
+  printf("OK: actual room renderer, four assets, scene/clock/menu, offline, caching, navigation, allocation failures, share expiry; peak widget %zu bytes. Hardware not tested.\n",peakSprite);
 }
 
