@@ -8,7 +8,8 @@ incluyen los cuatro personajes, que se eligen desde el táctil.
 ## Compilación y publicación
 
 El workflow `.github/workflows/ki-room.yml` compila los entornos
-`ESP32-2432S028R-Room` y `ESP32_2432S028_2USB-Room`. Después genera un instalador
+`ESP32-2432S028R-Room` y `ESP32_2432S028_2USB-Room`, y sus variantes
+`-Static` sin animación. Después genera un instalador
 con los binarios completos y de actualización, manifiestos y SHA-256.
 El artefacto `ki-room-installer` permite descargar el paquete incluso sin Pages.
 Un fallo de compilación impide publicar nuevos binarios.
@@ -42,10 +43,32 @@ No se ofrecen instalaciones sin los binarios. Para el paquete completo:
 
 ```bash
 python3 -m pip install platformio==6.1.18 esptool==4.8.1
-pio run -e ESP32-2432S028R-Room -e ESP32_2432S028_2USB-Room
+bash tools/compile_room.sh
 python3 tools/package_web.py --output _site --version ki-local
 python3 -m http.server 8765 --directory _site
 ```
 
 Referencias: https://esphome.github.io/esp-web-tools/ y
 https://github.com/actions/deploy-pages.
+
+## Portada animada
+
+`web/index.html` muestra la demo interactiva con reloj y estadísticas de ejemplo,
+selector de personajes, pausa, luz suave y comparación con la imagen original.
+El instalador se conserva en `web/instalar.html`, enlazado desde la portada.
+El firmware adapta el movimiento por filas RGB565: respiración, golpes, ki,
+chispas, agua y pétalos, con protección de los textos y límite de 8 FPS.
+Las pruebas de rendimiento y apariencia en placa siguen pendientes.
+
+## Opción sin animación
+
+La versión animada se selecciona por defecto. En el instalador, elige tu placa
+y «Sin animación» para instalar o descargar el `.bin` estático, completo o de
+actualización. Incluye las mismas imágenes, pantallas, reloj y datos de minería.
+Los efectos se excluyen durante la compilación con `CYD_ROOM_STATIC=1`:
+no hay repintados decorativos, pero se mantienen las actualizaciones de datos
+y la caducidad de las notificaciones de shares. No se ha medido la diferencia
+de hashrate en hardware.
+
+`python3 tools/check_room.py` comprueba ambas variantes con ASan/UBSan;
+la estática debe completar 32 ciclos sin repintados en cada escena y pantalla.
